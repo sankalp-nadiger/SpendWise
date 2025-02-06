@@ -43,12 +43,12 @@ Visualization: Power BI Embedded / Chart.js
 
 🏗️ Installation
 
-Prerequisites
+<h3>Prerequisites</h3>
 
 Ensure you have the following installed:
 
-Node.js
+1. Node.js
 
-MongoDB (local or cloud)
+2. MongoDB (local or cloud)
 
-Power BI account (for organization users)
+3. Power BI account (for organization users)
