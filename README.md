@@ -35,11 +35,13 @@ Backend: Node.js, Express.js
 
 Database: MongoDB (Mongoose ORM)
 
-Authentication: JWT-based auth
+Authentication: JWT-based auth & Oauth
 
 Data Analysis: Python (Pandas, NumPy) / Node.js (D3.js, TensorFlow.js)
 
 Visualization: Power BI Embedded / Chart.js
+
+(Work in progress)
 
 <h2>🏗️ Installation</h2>
 
