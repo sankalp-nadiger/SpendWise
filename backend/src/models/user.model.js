@@ -1,12 +1,26 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-const UserSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
+  username: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
-  gender: {type: String, enum: [Male,Female], required: true},
+  gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
   faceDescriptor: { type: [Number] },
   mobileNumber: { type: String, required: true, unique: true },
+  profession: { type: String, required: true },
+  careerStage: { 
+    type: String, 
+    enum: ["student", "entry", "mid", "senior", "executive", "retired"],
+    required: true
+  },
+  usageType: { 
+    type: String, 
+    enum: ["personal", "organization"],
+    required: true
+  },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -73,5 +87,5 @@ userSchema.pre("save", async function (next) {
         );
       };
 
-const User = mongoose.model("User", UserSchema);
+const User = mongoose.model("User", userSchema);
 export default User;

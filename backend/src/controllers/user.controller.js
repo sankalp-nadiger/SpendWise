@@ -1,68 +1,94 @@
-import User from "../models/user.model";
+import User from "../models/user.model.js";
 import asyncHandler from "../utils/asynchandler.utils.js";
 import {ApiError} from "../utils/API_Error.js";
 import ApiResponse from "../utils/API_Response.js";
 import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res) => {
-    try {
-      const { fullName, email, username, password, gender, mobile, faceDescriptor } = req.body;
-  
-      if ([fullName, email, username, password].some((field) => field?.trim() === "")) {
-        return res.status(400).json({ success: false, message: "All fields are required" });
-      }
-  
-      // Check if user exists
-      const existedUser = await User.findOne({ $or: [{ username }, { email }] });
-      if (existedUser) {
-        return res.status(409).json({ success: false, message: "User with email or username already exists" });
-      }
-  
-      // Create user
-      const user = await User.create({
-        name: fullName,
-        email,
-        password,
-        gender,
-        username: username.toLowerCase(),
-        mobileNumber: mobile,
-        faceDescriptor: faceDescriptor || [], // Store face descriptor if provided
-      });
-  
-      console.log("User successfully created:", user);
-      await user.assignRandomAvatar();
-      await user.save();
-  
-      // Generate tokens
-      const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
-      console.log("Generated Tokens:", { accessToken, refreshToken });
-  
-      // Cookie options
-      const options = {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-      };
-  
-      // Send response
-      return res
-        .status(201)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
-        .json({
-          success: true,
-          message: "User registered successfully",
-          data: {
-            user: await User.findById(user._id).select("-password"),
-            accessToken,
-          },
-        });
-  
-    } catch (error) {
-      console.error("Error during registration:", error);
-      return res.status(500).json({ success: false, message: "Internal Server Error", error: error.message });
+  try {
+    const { 
+      fullName, 
+      email, 
+      username, 
+      password, 
+      gender, 
+      mobile, 
+      profession,
+      careerStage,
+      usageType,
+      faceDescriptor 
+    } = req.body;
+
+    // Check if required fields are present
+    if ([fullName, email, username, password, gender, mobile, profession, careerStage, usageType]
+      .some((field) => field?.trim() === "")) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
     }
-  });
+
+    // Check if user exists
+    const existedUser = await User.findOne({ 
+      $or: [{ username }, { email }, { mobileNumber: mobile }] 
+    });
+    
+    if (existedUser) {
+      return res.status(409).json({ 
+        success: false, 
+        message: "User with email, username, or mobile number already exists" 
+      });
+    }
+
+    // Create user
+    const user = await User.create({
+      name: fullName,
+      email,
+      username: username.toLowerCase(),
+      password,
+      gender,
+      mobileNumber: mobile,
+      profession,
+      careerStage,
+      usageType,
+      faceDescriptor: faceDescriptor || [], // Store face descriptor if provided
+    });
+
+    console.log("User successfully created:", user);
+    await user.assignRandomAvatar();
+    await user.save();
+
+    // Generate tokens
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+    console.log("Generated Tokens:", { accessToken, refreshToken });
+
+    // Cookie options
+    const options = {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    };
+
+    // Send response
+    return res
+      .status(201)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json({
+        success: true,
+        message: "User registered successfully",
+        data: {
+          user: await User.findById(user._id).select("-password"),
+          accessToken,
+        },
+      });
+
+  } catch (error) {
+    console.error("Error during registration:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal Server Error", 
+      error: error.message 
+    });
+  }
+});
 
   const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -92,69 +118,95 @@ const registerUser = asyncHandler(async (req, res) => {
     }
   };
 
-  const loginUser = asyncHandler(async (req, res) => {
-    const { username, password, email, userType, faceDescriptor } = req.body; // Added faceDescriptor
-    console.log("Request body:", req.body);
+  /**
+ * Compares two face descriptors and determines if they match
+ * 
+ * @param {Array} storedDescriptor - The face descriptor stored in the database
+ * @param {Array} loginDescriptor - The face descriptor provided during login
+ * @param {Number} threshold - Similarity threshold (lower is more strict, default: 0.5)
+ * @returns {Boolean} - True if faces match, false otherwise
+ */
+const compareFaceDescriptors = (storedDescriptor, loginDescriptor, threshold = 0.5) => {
+  if (!storedDescriptor || !loginDescriptor) return false;
+  if (storedDescriptor.length !== loginDescriptor.length) return false;
+  
+  // Calculate Euclidean distance between the descriptors
+  let distance = 0;
+  for (let i = 0; i < storedDescriptor.length; i++) {
+    distance += Math.pow(storedDescriptor[i] - loginDescriptor[i], 2);
+  }
+  distance = Math.sqrt(distance);
+  
+  console.log(`Face similarity distance: ${distance}`);
+  
+  // Lower distance means more similar faces
+  return distance < threshold;
+};
 
-    if (!username && !email) {
-        throw new ApiError(400, "Username or email is required");
-    }
+const loginUser = asyncHandler(async (req, res) => {
+  const { username, password, email, usageType, faceDescriptor } = req.body;
+  console.log("Request body:", req.body);
 
-    let user;
-    if (userType === "organization") {
-        user = await OrgUser.findOne({ $or: [{ username }, { email }] });
-    } else {
-        user = await User.findOne({ $or: [{ username }, { email }] });
-    }
+  if (!username && !email) {
+      throw new ApiError(400, "Username or email is required");
+  }
 
-    if (!user) {
-        throw new ApiError(404, "User does not exist");
-    }
+  // Find the user
+  const user = await User.findOne({ $or: [{ username }, { email }] });
 
-    // If faceDescriptor is provided, use face-based authentication
-    if (faceDescriptor && faceDescriptor.length > 0) {
-        if (!user.faceDescriptor || user.faceDescriptor.length === 0) {
-            throw new ApiError(401, "Face authentication not set up for this user");
-        }
+  if (!user) {
+      throw new ApiError(404, "User does not exist");
+  }
 
-        const isFaceMatch = compareFaceDescriptors(user.faceDescriptor, faceDescriptor);
-        if (!isFaceMatch) {
-            throw new ApiError(401, "Face authentication failed");
-        }
-    } else {
-        // Otherwise, use password authentication
-        if (!password) {
-            throw new ApiError(400, "Password or face authentication is required");
-        }
-        const isPasswordValid = await user.isPasswordCorrect(password);
-        if (!isPasswordValid) {
-            throw new ApiError(401, "Invalid user credentials");
-        }
-    }
+  // If faceDescriptor is provided, use face-based authentication
+  if (faceDescriptor && faceDescriptor.length > 0) {
+      if (!user.faceDescriptor || user.faceDescriptor.length === 0) {
+          throw new ApiError(401, "Face authentication not set up for this user");
+      }
 
-    // Generate tokens
-    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+      const isFaceMatch = compareFaceDescriptors(user.faceDescriptor, faceDescriptor);
+      if (!isFaceMatch) {
+          throw new ApiError(401, "Face authentication failed");
+      }
+      
+      console.log("Face authentication successful for user:", user.username);
+  } else {
+      // Otherwise, use password authentication
+      if (!password) {
+          throw new ApiError(400, "Password or face authentication is required");
+      }
+      const isPasswordValid = await user.isPasswordCorrect(password);
+      if (!isPasswordValid) {
+          throw new ApiError(401, "Invalid user credentials");
+      }
+      
+      console.log("Password authentication successful for user:", user.username);
+  }
 
-    const loggedInUser = await (userType === "organization"
-        ? OrgUser.findById(user._id).select("-password -refreshToken")
-        : User.findById(user._id).select("-password -refreshToken"));
+  // Generate tokens
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
 
-    const options = {
-        httpOnly: true,
-        secure: true,
-    };
+  // Get user data without sensitive information
+  // Fixed the userType reference issue - using usageType from the request
+  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
-    return res
-        .status(200)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
-        .json(
-            new ApiResponse(200, {
-                user: loggedInUser,
-                accessToken,
-                refreshToken,
-            }, "User logged in successfully")
-        );
+  const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Only in production
+      sameSite: "lax"
+  };
+
+  return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+          new ApiResponse(200, {
+              user: loggedInUser,
+              accessToken,
+              refreshToken,
+          }, "User logged in successfully")
+      );
 });
 
 export {registerUser, loginUser}
