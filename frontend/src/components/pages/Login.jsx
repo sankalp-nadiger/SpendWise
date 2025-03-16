@@ -582,7 +582,7 @@ console.log(`🧐 Spoof Check -> Brightness: ${avgBrightness.toFixed(2)}, Varian
 
       // Redirect or update UI based on successful login
       setTimeout(() => {
-        window.location.href = "/dashboard";
+        window.location.href = "/main";
       }, 1000);
     } catch (error) {
       console.error("Login error:", error);
@@ -644,12 +644,13 @@ console.log(`🧐 Spoof Check -> Brightness: ${avgBrightness.toFixed(2)}, Varian
       const response = await axios.post("http://localhost:8000/api/users/login", loginData, {
         withCredentials: true,
       });
+      console.log("Login response:", response.data);
 
       setStatusMessage("✅ Login successful!");
       
       // Redirect or update UI based on successful login
       setTimeout(() => {
-        window.location.href = "/dashboard";
+        window.location.href = "/main";
       }, 1000);
     } catch (error) {
       console.error("Login error:", error);
@@ -671,7 +672,7 @@ useEffect(() => {
     }
   }, [isDarkMode]);
 return (
-  <AuroraBackground>
+  <AuroraBackground isDarkMode={isDarkMode}>
  
    <div className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-200 text-black'} p-8 rounded-lg shadow-lg w-96 relative`}>
       {/* Back to Home Button */}

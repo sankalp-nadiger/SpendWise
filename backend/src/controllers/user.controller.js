@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import OrganizationUser from "../models/orgUser.model.js";
 import asyncHandler from "../utils/asynchandler.utils.js";
 import {ApiError} from "../utils/API_Error.js";
 import ApiResponse from "../utils/API_Response.js";
@@ -209,4 +210,79 @@ const loginUser = asyncHandler(async (req, res) => {
       );
 });
 
-export {registerUser, loginUser}
+const logoutUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $unset: {
+        refreshToken: 1, // this removes the field from document
+      },
+    },
+    {
+      new: true,
+    },
+  );
+
+  const options = {
+    httpOnly: true,
+    //secure: true,
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"));
+});
+const formatDate = (date) => {
+  return new Date(date).toISOString().split("T")[0].split("-").reverse().join("-");
+};
+export const getUserProfile = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user._id; // Extracted from authentication middleware
+
+    // Fetch user from database
+    const user = await User.findById(userId).select("-password -faceDescriptor");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let userData = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      username: user.username,
+      gender: user.gender,
+      mobileNumber: user.mobileNumber,
+      profession: user.profession,
+      careerStage: user.careerStage,
+      usageType: user.usageType,
+      createdAt: formatDate(user.createdAt), // Format date to DD-MM-YY
+    };
+
+    // If user belongs to an organization, fetch organization details
+    if (user.usageType === "organization") {
+      const orgMember = await OrganizationUser.findOne({ user: userId }).populate("organization");
+
+      if (!orgMember) {
+        return res.status(404).json({ message: "Organization user details not found" });
+      }
+
+      userData = {
+        ...userData,
+        organization: {
+          name: orgMember.organization.name,
+          role: orgMember.role,
+          team: orgMember.team,
+          joinedAt: formatDate(orgMember.joinedAt),
+        },
+      };
+    }
+
+    res.status(200).json({ success: true, user: userData });
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+export {registerUser, logoutUser, loginUser}

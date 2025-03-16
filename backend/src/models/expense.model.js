@@ -5,6 +5,7 @@ const ExpenseSchema = new mongoose.Schema({
   organization: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: false }, // Nullable if personal
   amount: { type: Number, required: true },
   category: { type: String, required: true },
+  title: { type: String, required: true },
   description: { type: String },
   date: { type: Date, default: Date.now },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

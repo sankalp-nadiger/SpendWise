@@ -32,24 +32,29 @@ const InvestmentsPage = () => {
   const fetchInvestments = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:8000/api/investments');
+      const response = await axios.get('http://localhost:8000/api/investment', {
+        withCredentials: true // Important for sending cookies
+      });
       setInvestments(response.data);
     } catch (error) {
       console.error('Error fetching investments:', error);
+      // Handle unauthorized errors
+      if (error.response && error.response.status === 401) {
+        // Redirect to login page if not authenticated
+        window.location.href = '/login';
+      }
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
+  
+  // Update the handleAddInvestment function
   const handleAddInvestment = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8000/api/investments', formData);
+      await axios.post('http://localhost:8000/api/investment', formData, {
+        withCredentials: true // Important for sending cookies
+      });
       setIsAddModalOpen(false);
       setFormData({
         name: '',
@@ -61,41 +66,86 @@ const InvestmentsPage = () => {
       fetchInvestments();
     } catch (error) {
       console.error('Error adding investment:', error);
+      // You can add better error handling here
+      if (error.response && error.response.data.message) {
+        alert(error.response.data.message);
+      } else {
+        alert('Failed to add investment');
+      }
     }
   };
-
+  
+  // Update the handleEditInvestment function
   const handleEditInvestment = async (e) => {
     e.preventDefault();
+    // Debug check
+    console.log("Editing investment with ID:", currentInvestment?.id);
+    
+    if (!currentInvestment || !currentInvestment.id) {
+      alert('Invalid investment ID. Please try again.');
+      return;
+    }
+    
     try {
-      await axios.put(`http://localhost:8000/api/investments/${currentInvestment.id}`, formData);
+      await axios.put(`http://localhost:8000/api/investment/${currentInvestment.id}`, formData, {
+        withCredentials: true
+      });
       setIsEditModalOpen(false);
       fetchInvestments();
     } catch (error) {
       console.error('Error updating investment:', error);
+      if (error.response && error.response.data.message) {
+        alert(error.response.data.message);
+      } else {
+        alert('Failed to update investment');
+      }
     }
   };
-
+  
   const handleDeleteInvestment = async (id) => {
+    // Debug check
+    console.log("Deleting investment with ID:", id);
+    
+    if (!id) {
+      alert('Invalid investment ID. Please try again.');
+      return;
+    }
+    
     if (window.confirm('Are you sure you want to delete this investment?')) {
       try {
-        await axios.delete(`http://localhost:8000/api/investments/${id}`);
+        await axios.delete(`http://localhost:8000/api/investment/${id}`, {
+          withCredentials: true
+        });
         fetchInvestments();
       } catch (error) {
         console.error('Error deleting investment:', error);
+        if (error.response && error.response.data.message) {
+          alert(error.response.data.message);
+        } else {
+          alert('Failed to delete investment');
+        }
       }
     }
   };
 
   const openEditModal = (investment) => {
+    console.log("Opening edit modal for investment:", investment); // Debugging
+  
     setCurrentInvestment(investment);
     setFormData({
       name: investment.name,
       amount: investment.amount,
       type: investment.type,
-      date: investment.date,
+      date: investment.date ? investment.date.split("T")[0] : '', // Fixing date format
       notes: investment.notes || ''
     });
     setIsEditModalOpen(true);
+  };
+  
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
   const getInvestmentTypeIcon = (type) => {
@@ -118,7 +168,7 @@ const InvestmentsPage = () => {
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
             <a 
-              href="/" 
+              href="/main" 
               className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
             >
               <ArrowLeft className="h-6 w-6" />

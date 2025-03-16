@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowDown, DollarSign } from "lucide-react";
-import { BarChart3, PieChart, FileText, Bot, Plus, Home, Settings, CreditCard, TrendingUp, Calendar, ExternalLink, Zap, ChevronRight } from "lucide-react";
+import { BarChart3, PieChart, FileText, Bot, Plus, Home, Settings, CreditCard, TrendingUp, Calendar, ExternalLink, Zap, LogOut } from "lucide-react";
 
 const MainPage = () => {
   const navigate = useNavigate();
@@ -202,21 +202,49 @@ useEffect(() => {
     
     return () => clearInterval(intervalId);
   }, []);
-  const handleAddExpense = () => { console.log("Expense Added:", expense); setIsModalOpen(false); setExpense({ title: "", amount: "", category: "" }); }; 
+  const handleAddExpense = async () => {
+    if (!expense.title || !expense.amount || !expense.category) return;
+  
+    try {
+      const response = await fetch("http://localhost:8000/api/expense/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // ✅ Ensures cookies are sent with the request
+        body: JSON.stringify(expense),
+      });
+      
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Expense Added:", data);
+  
+        // Close modal and reset form
+        setIsModalOpen(false);
+        setExpense({ title: "", amount: "", category: "" });
+      } else {
+        console.error("Failed to add expense");
+      }
+    } catch (error) {
+      console.error("Error adding expense:", error);
+    }
+  };
+  
   // Left sidebar navigation items
   const leftNavItems = [
     { icon: <Home size={20} />, label: "Home", action: () => navigate("/") },
     { icon: <BarChart3 size={20} />, label: "Dashboard", action: () => navigate("/dashboard") },
     { icon: <FileText size={20} />, label: "Reports", action: () => navigate("/reports") },
     { icon: <Bot size={20} />, label: "AI Insights", action: () => navigate("/ai-insights") },
-    { icon: <CreditCard size={20} />, label: "Expenses", action: () => navigate("/expenses") },
+    { icon: <CreditCard size={20} />, label: "Expenses", action: () => navigate("/expense") },
   ];
 
   // Right sidebar items
   const rightNavItems = [
-    { icon: <TrendingUp size={20} />, label: "Investments", action: () => navigate("/investments") },
-    { icon: <Calendar size={20} />, label: "Budget Calendar", action: () => navigate("/calendar") },
-    { icon: <Settings size={20} />, label: "Settings", action: () => navigate("/settings") },
+    { icon: <TrendingUp size={20} />, label: "Investments", action: () => navigate("/investment") },
+    { icon: <Calendar size={20} />, label: "Budget Calendar", action: () => navigate("/budget") },
+    { icon: <Settings size={20} />, label: "Settings", action: () => navigate("/profile") },
   ];
 
   return (
@@ -265,15 +293,33 @@ useEffect(() => {
               </TooltipProvider>
             ))}
           </nav>
-          
           <div className="mt-auto">
-            <Button 
-              onClick={() => setIsModalOpen(true)} 
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus size={18} />
-              <span className="hidden md:inline">Add Expense</span>
-            </Button>
+          <Button
+  onClick={async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/users/logout", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+        credentials: "include",
+      });
+      if (response.ok) {
+        // Handle successful logout (e.g., redirect or update UI)
+        console.log("Logged out successfully");
+      } else {
+        console.error("Logout failed");
+      }
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  }}
+  className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700"
+>
+  <LogOut size={18} />
+  <span className="hidden md:inline">Logout</span>
+</Button>
+
           </div>
         </div>
 

@@ -6,9 +6,12 @@ import { AuroraBackground } from "../ui/aurorabackground";
 
 export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("theme") === "dark";
+    }
+    return false; // Default to light mode
   });
-  
+
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
@@ -20,7 +23,7 @@ export default function HomePage() {
   }, [isDarkMode]);
 
   return (
-    <AuroraBackground>
+    <AuroraBackground isDarkMode={isDarkMode}>
       {/* Dark Mode Toggle Button - Positioned Top Right */}
       <button
         onClick={() => setIsDarkMode(!isDarkMode)}
@@ -43,7 +46,8 @@ export default function HomePage() {
         <div className="font-extralight text-base md:text-4xl dark:text-neutral-200 py-4">
           Your personal and secure finance-tracker app
         </div>
-        <button onClick={() => window.location.href = "/login"}
+        <button 
+          onClick={() => window.location.href = "/login"}
           className="bg-black dark:bg-white rounded-full w-fit text-white dark:text-black px-4 py-2">
           Access Now
         </button>

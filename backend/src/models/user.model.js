@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   faceDescriptor: { type: [Number] },
   mobileNumber: { type: String, required: true, unique: true },
   profession: { type: String, required: true },
+  budget: { type: Number, default: 1000 },
   careerStage: { 
     type: String, 
     enum: ["student", "entry", "mid", "senior", "executive", "retired"],

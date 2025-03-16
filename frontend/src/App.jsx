@@ -8,6 +8,9 @@ import FeaturesPage from "./components/pages/Features"
 import MainPage from "./components/pages/MainPage"
 import InvestmentsPage from "./components/pages/Investment"
 import ExpensesPage from "./components/pages/Expense"
+import BudgetCalendarPage from "./components/pages/BudgetCalender"
+import ProfilePage from "./components/pages/Profile"
+import Dashboard from "./components/pages/Dashboard"
 function App() {
     return (
         <Router>
@@ -20,6 +23,9 @@ function App() {
                 <Route path="/main" element={<MainPage />} />
                 <Route path="/investment" element={<InvestmentsPage />} />
                 <Route path="/expense" element={<ExpensesPage />} />
+                <Route path="/budget" element={<BudgetCalendarPage/>} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/dashboard" element={<Dashboard />} />
             </Routes>
         </Router>
     );

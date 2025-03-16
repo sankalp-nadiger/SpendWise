@@ -1,24 +1,91 @@
-import Expense from "../models/Expense.js";
+import Expense from "../models/expense.model.js";
 
 // Add new expense
 export const addExpense = async (req, res) => {
   try {
-    const { userId, amount, category, description, date, teamId } = req.body;
-    const newExpense = new Expense({ userId, amount, category, description, date, teamId });
+    console.log("User in request:", req.user); // Debugging line
+    
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized: No user found" });
+    }
+
+    const userId = req.user._id;
+    const { amount, title, category, description, teamId } = req.body;
+
+    const newExpense = new Expense({
+      user: userId, // Make sure this matches schema
+      title,
+      amount,
+      category,
+      description,
+      teamId,
+      createdBy: userId, // Ensure it's properly assigned
+    });
+
     await newExpense.save();
     res.status(201).json({ message: "Expense added successfully", expense: newExpense });
+
   } catch (error) {
-    res.status(500).json({ message: "Error adding expense", error });
+    console.error("Error adding expense:", error); // Log full error
+    res.status(500).json({ message: "Error adding expense", error: error.message });
   }
 };
 
 // Get all expenses for a user
 export const getUserExpenses = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const expenses = await Expense.find({ userId });
+    const userId = req.user._id; // ✅ Extracted from JWT
+    const expenses = await Expense.find({ user: userId }).sort({ date: -1 });
+
     res.status(200).json(expenses);
   } catch (error) {
+    console.error("Error fetching expenses:", error);
     res.status(500).json({ message: "Error fetching expenses", error });
+  }
+};
+
+export const updateExpense = async (req, res) => {
+  try {
+    const userId = req.user._id; // ✅ Extract userId from JWT
+    const { expenseId } = req.params;
+    const { title, amount, category, date, branch } = req.body;
+
+    const expense = await Expense.findOne({ _id: expenseId, user: userId });
+
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    // Update fields
+    expense.title = title || expense.title;
+    expense.amount = amount || expense.amount;
+    expense.category = category || expense.category;
+    expense.date = date ? new Date(date) : expense.date;
+    if (branch !== undefined) expense.branch = branch;
+
+    await expense.save();
+
+    res.status(200).json({ message: "Expense updated successfully", expense });
+  } catch (error) {
+    console.error("Error updating expense:", error);
+    res.status(500).json({ message: "Error updating expense", error });
+  }
+};
+
+export const deleteExpense = async (req, res) => {
+  try {
+    const userId = req.user._id; // ✅ Extract userId from JWT
+    const { expenseId } = req.params;
+
+    const expense = await Expense.findOneAndDelete({ _id: expenseId, user: userId });
+
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found or not authorized to delete" });
+    }
+
+    res.status(200).json({ message: "Expense deleted successfully", expenseId });
+  } catch (error) {
+    console.error("Error deleting expense:", error);
+    res.status(500).json({ message: "Error deleting expense", error });
   }
 };
