@@ -3,6 +3,7 @@ import OrganizationUser from "../models/orgUser.model.js";
 import asyncHandler from "../utils/asynchandler.utils.js";
 import {ApiError} from "../utils/API_Error.js";
 import ApiResponse from "../utils/API_Response.js";
+import Organization from "../models/org.model.js";
 import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -17,20 +18,21 @@ const registerUser = asyncHandler(async (req, res) => {
       profession,
       careerStage,
       usageType,
-      faceDescriptor 
+      faceDescriptor,
+      organizationData,  // required when creating an organization (admin registration)
+      inviteLink         // required when joining via an invite (for manager/employee)
     } = req.body;
 
     // Check if required fields are present
-    if ([fullName, email, username, password, gender, mobile, profession, careerStage, usageType]
-      .some((field) => field?.trim() === "")) {
+    if ([fullName, email, username, password, gender, mobile, careerStage, usageType]
+      .some(field => !field || field.toString().trim() === "")) {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
-    // Check if user exists
+    // Check if user exists by email, username, or mobile
     const existedUser = await User.findOne({ 
       $or: [{ username }, { email }, { mobileNumber: mobile }] 
     });
-    
     if (existedUser) {
       return res.status(409).json({ 
         success: false, 
@@ -49,38 +51,106 @@ const registerUser = asyncHandler(async (req, res) => {
       profession,
       careerStage,
       usageType,
-      faceDescriptor: faceDescriptor || [], // Store face descriptor if provided
+      faceDescriptor: faceDescriptor || []
     });
 
     console.log("User successfully created:", user);
     await user.assignRandomAvatar();
     await user.save();
 
-    // Generate tokens
+    let orgInviteLinks = null; // for admin registration scenario
+    let roleAssigned = ""; // role that will be assigned to the user
+    let organization = null;
+
+    if (usageType === "organization" && organizationData) {
+      // Two flows: invite-based registration OR new organization creation (admin registration)
+      if (organizationData.inviteLink) {
+        // Registration via invite link
+        // Expected invite link format: spendwise/org=<orgName>/role=<role>
+        const regex = /spendwise\/org=([^\/]+)\/role=([^\/]+)/;
+        const match = organizationData.inviteLink.match(regex);
+        if (!match) {
+          return res.status(400).json({ success: false, message: "Invalid invite link format" });
+        }
+        const parsedOrgName = match[1];
+        const parsedRole = match[2];
+
+        // Only manager and employee roles are allowed via invite
+        if (!["manager", "employee"].includes(parsedRole)) {
+          return res.status(400).json({ success: false, message: "Invalid role in invite link" });
+        }
+        roleAssigned = parsedRole;
+
+        // Find the organization based on the invite link's org name
+        organization = await Organization.findOne({ name: parsedOrgName });
+        if (!organization) {
+          return res.status(404).json({ success: false, message: "Organization not found from invite link" });
+        }
+
+        // Update organization's members list
+        organization.members.push({ user: user._id, role: roleAssigned });
+        await organization.save();
+      } else if (organizationData.isNew) {
+        // New organization creation (admin registration)
+        if (!organizationData.name || organizationData.name.trim() === "") {
+          return res.status(400).json({ success: false, message: "Organization name is required for admin registration" });
+        }
+        // Ensure organization doesn't exist already
+        const existingOrg = await Organization.findOne({ name: organizationData.name });
+        if (existingOrg) {
+          return res.status(400).json({ success: false, message: "Organization already exists" });
+        }
+        roleAssigned = "admin";
+        const baseInviteUrl = `spendwise/org=${organizationData.name}`;
+        const managerInvite = `${baseInviteUrl}/role=manager`;
+        const employeeInvite = `${baseInviteUrl}/role=employee`;
+        orgInviteLinks = { managerInvite, employeeInvite };
+        organization = await Organization.create({
+          name: organizationData.name,
+          admin: user._id,
+          members: [{ user: user._id, role: "admin" }],
+          inviteLinks: { manager: managerInvite, employee: employeeInvite },
+        });        
+      }
+      
+      // Create an entry in the OrganizationUser schema
+      await OrganizationUser.create({
+        user: user._id,
+        organization: organization._id,
+        role: roleAssigned,
+        team: "General",
+      });
+    }
+
+    // Generate access and refresh tokens
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
     console.log("Generated Tokens:", { accessToken, refreshToken });
 
-    // Cookie options
+    // Set cookie options
     const options = {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
     };
 
-    // Send response
-    return res
-      .status(201)
+    // Prepare the response payload
+    const responseData = {
+      user: await User.findById(user._id).select("-password"),
+      accessToken,
+    };
+
+    if (orgInviteLinks) {
+      responseData.inviteLinks = orgInviteLinks;
+    }
+
+    return res.status(201)
       .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", refreshToken, options)
       .json({
         success: true,
         message: "User registered successfully",
-        data: {
-          user: await User.findById(user._id).select("-password"),
-          accessToken,
-        },
+        data: responseData,
       });
-
   } catch (error) {
     console.error("Error during registration:", error);
     return res.status(500).json({ 
@@ -225,7 +295,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    //secure: true,
+    secure: true,
   };
 
   return res

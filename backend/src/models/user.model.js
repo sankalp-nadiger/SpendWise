@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
   gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
   faceDescriptor: { type: [Number] },
   mobileNumber: { type: String, required: true, unique: true },
-  profession: { type: String, required: true },
+  profession: { type: String},
   budget: { type: Number, default: 1000 },
   careerStage: { 
     type: String, 

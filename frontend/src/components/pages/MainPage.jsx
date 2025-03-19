@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowDown, DollarSign } from "lucide-react";
+import axios from 'axios'
 import { BarChart3, PieChart, FileText, Bot, Plus, Home, Settings, CreditCard, TrendingUp, Calendar, ExternalLink, Zap, LogOut } from "lucide-react";
 
 const MainPage = () => {
@@ -297,22 +298,21 @@ useEffect(() => {
           <Button
   onClick={async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/users/logout", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-        credentials: "include",
-      });
-      if (response.ok) {
-        // Handle successful logout (e.g., redirect or update UI)
+      const response = await axios.post(
+        "http://localhost:8000/api/users/logout",
+        {},
+        { withCredentials: true }
+      );
+      
+      if (response.status === 200) {
+        window.location.href = '/';
         console.log("Logged out successfully");
       } else {
         console.error("Logout failed");
       }
     } catch (error) {
       console.error("Error logging out:", error);
-    }
+    }    
   }}
   className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700"
 >
@@ -429,7 +429,7 @@ useEffect(() => {
                       <CardHeader className="pb-2">
                         <div className="flex justify-between items-center">
                           <CardTitle className="text-lg">Financial News</CardTitle>
-                          <Button variant="outline" size="sm" className={`text-xs ${isDarkMode ? "border-gray-700" : ""}`}>
+                          <Button variant="outline" size="sm" className={`text-xs ${isDarkMode ? "bg-blue-700" : ""}`}>
                             <Zap size={14} className="mr-1" /> Personalize
                           </Button>
                         </div>

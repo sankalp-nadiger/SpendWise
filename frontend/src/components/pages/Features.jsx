@@ -83,7 +83,7 @@ const FeaturesPage = () => {
           <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300 space-y-2">
             <li>Ensure all expenses logged are accurate and up-to-date.</li>
             <li>Personal accounts are for individual use only.</li>
-            <li>Organizations must assign appropriate permissions to team members.</li>
+            <li>Organization admins must invite their team members by a link on their profile page accessible through settings.</li>
             <li>Data privacy is important – do not share sensitive financial details. We never ask any card or bank account details.</li>
             <li>Violation of terms may lead to account suspension.</li>
           </ul>
@@ -106,7 +106,7 @@ const FeaturesPage = () => {
         {/* Proceed Button */}
         <div className="flex justify-center">
           <button
-            onClick={() => navigate("/mainPage")}
+            onClick={() => navigate("/main")}
             disabled={!isChecked}
             className={`px-6 py-3 font-semibold rounded-lg transition ${
               isChecked

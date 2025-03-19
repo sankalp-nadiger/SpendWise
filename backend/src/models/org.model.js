@@ -9,6 +9,10 @@ const OrganizationSchema = new mongoose.Schema({
       role: { type: String, enum: ["admin", "manager", "employee"], required: true },
     }
   ],
+  inviteLinks: {
+    manager: { type: String },
+    employee: { type: String },
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

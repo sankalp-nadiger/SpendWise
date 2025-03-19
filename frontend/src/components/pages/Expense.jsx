@@ -40,7 +40,10 @@ function ExpensesPage() {
     branch: ''
   });
   const [userType, setUserType] = useState('individual'); // individual or organization
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+      const saved = localStorage.getItem("theme");
+      return saved === "dark"; // If "dark", set true; otherwise, set false (for "light" or null)
+    });
   // Add this state to manage the export dropdown
 const [showExportOptions, setShowExportOptions] = useState(false);
 
@@ -137,7 +140,7 @@ useEffect(() => {
   const toggleDarkMode = () => {
     const newMode = !darkMode;
     setDarkMode(newMode);
-    localStorage.setItem('darkMode', newMode.toString());
+    localStorage.setItem('theme', newMode ? 'dark' : 'light');
   };
 
   // Format currency in Rupees
