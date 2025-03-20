@@ -9,7 +9,7 @@ export default function HomePage() {
     if (typeof window !== "undefined") {
       return localStorage.getItem("theme") === "dark";
     }
-    return false; // Default to light mode
+    return false;
   });
 
   useEffect(() => {

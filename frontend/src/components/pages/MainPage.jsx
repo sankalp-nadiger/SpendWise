@@ -9,7 +9,9 @@ import { Separator } from "@/components/ui/separator";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowDown, DollarSign } from "lucide-react";
-import axios from 'axios'
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import axios from 'axios';
 import { BarChart3, PieChart, FileText, Bot, Plus, Home, Settings, CreditCard, TrendingUp, Calendar, ExternalLink, Zap, LogOut } from "lucide-react";
 
 const MainPage = () => {
@@ -20,6 +22,20 @@ const MainPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expense, setExpense] = useState({ title: "", amount: "", category: "" });
   const categories = ["Food", "Transport", "Shopping", "Entertainment", "Bills", "Other"];
+  const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
+  const [showAddAnotherPrompt, setShowAddAnotherPrompt] = useState(false);
+  const [recurringExpense, setRecurringExpense] = useState({
+    title: "",
+    amount: "",
+    category: "",
+    frequency: "monthly",
+    startDate: "",
+    endDate: "",
+    paymentMethod: "upi",
+    notes: ""
+  });
+  const [addAnotherExpense, setAddAnotherExpense] = useState(false);
+  const [userType, setUserType] = useState("personal");
   
   // State for market data and news
   const [marketData, setMarketData] = useState([]);
@@ -28,6 +44,13 @@ const MainPage = () => {
   const [isLoadingNews, setIsLoadingNews] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
 
+  useEffect(() => {
+    const storedUserType = localStorage.getItem("userType");
+    if (storedUserType) {
+      setUserType(storedUserType);
+    }
+  }, []);
+   
   // Fetch market data
  // Financial News with Indian Sources
 useEffect(() => {
@@ -138,10 +161,7 @@ useEffect(() => {
           
           fetchMarketData();
           
-     
-          
         // if (!response.ok) throw new Error('Market data fetch failed');
-        
         
         // Format the data for your UI with Indian market indices
         const formattedData = [
@@ -203,6 +223,69 @@ useEffect(() => {
     
     return () => clearInterval(intervalId);
   }, []);
+
+  const frequencies = userType === "personal" 
+    ? ["daily", "weekly", "monthly", "quarterly", "yearly"] 
+    : ["weekly", "monthly", "quarterly", "yearly", "custom"];
+  
+  // Categories based on user type
+  const recurringCategories = userType === "personal"
+    ? ["Rent", "Phone", "Internet", "Utilities", "Subscriptions", "Insurance", "Loan", "Other"]
+    : ["Rent", "Utilities", "Services", "Payroll", "Subscriptions", "Insurance", "Taxes", "Equipment", "Maintenance", "Other"];
+  
+  // Payment methods based on user type
+  const paymentMethods = userType === "personal"
+    ? ["upi", "credit card", "debit card", "net banking", "cash", "auto debit"]
+    : ["bank transfer", "credit card", "net banking", "check", "auto debit", "invoice"];
+  
+  // Handle recurring expense submission
+  const handleAddRecurringExpense = async () => {
+    if (!recurringExpense.title || !recurringExpense.amount || !recurringExpense.category) return;
+  
+    try {
+      const response = await fetch("http://localhost:8000/api/recExpense/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          ...recurringExpense,
+          userType
+        }),
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Recurring Expense Added:", data);
+        
+        // Show the "Add Another" prompt after successful addition
+        setShowAddAnotherPrompt(true);
+        
+        // Don't close the modal yet - we'll do that based on user's choice in the prompt
+      } else {
+        console.error("Failed to add recurring expense");
+      }
+    } catch (error) {
+      console.error("Error adding recurring expense:", error);
+    }
+  };
+  
+  // Add this function to reset the form when user chooses to add another expense
+  const resetRecurringExpenseForm = () => {
+    setRecurringExpense({
+      title: "",
+      amount: "",
+      category: "",
+      frequency: "monthly",
+      startDate: "",
+      endDate: "",
+      paymentMethod: "upi",
+      notes: ""
+    });
+    setShowAddAnotherPrompt(false);
+  };
+
   const handleAddExpense = async () => {
     if (!expense.title || !expense.amount || !expense.category) return;
   
@@ -239,7 +322,8 @@ useEffect(() => {
     { icon: <FileText size={20} />, label: "Reports", action: () => navigate("/reports") },
     { icon: <Bot size={20} />, label: "AI Insights", action: () => navigate("/ai-insights") },
     { icon: <CreditCard size={20} />, label: "Expenses", action: () => navigate("/expense") },
-  ];
+    { icon: <DollarSign size={20} />, label: "Income", action: () => navigate("/income") },
+];
 
   // Right sidebar items
   const rightNavItems = [
@@ -327,46 +411,96 @@ useEffect(() => {
         <div className="flex-1 overflow-auto">
           {/* Header */}
           <header className={`relative p-10 ${isDarkMode ? "bg-gray-900" : "bg-gray-50"} border-b ${isDarkMode ? "border-gray-700" : "border-gray-200"} shadow-sm overflow-hidden transition-colors duration-300`}>
-      {/* Background Elements - Adjusted for better dark/light mode visibility */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 via-indigo-500/30 to-cyan-400/30 dark:from-blue-900/40 dark:via-indigo-800/40 dark:to-cyan-700/40 blur-2xl"></div>
-      <div className="absolute top-1/3 left-1/4 w-32 h-32 bg-blue-400 dark:bg-blue-600 opacity-30 blur-3xl rounded-full animate-pulse"></div>
-      <div className="absolute bottom-1/4 right-1/3 w-24 h-24 bg-cyan-300 dark:bg-cyan-500 opacity-30 blur-3xl rounded-full animate-pulse"></div>
-             {/* Left Rupee Icon */}
-      <div className="absolute left-12 top-1/2 -translate-y-1/2 hidden md:block">
-        <div className={`text-4xl font-bold ${isDarkMode ? "text-blue-400/40" : "text-blue-500/30"}`}>
+  {/* Background Elements - Adjusted for better dark/light mode visibility */}
+  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 via-indigo-500/30 to-cyan-400/30 dark:from-blue-900/40 dark:via-indigo-800/40 dark:to-cyan-700/40 blur-2xl"></div>
+  
+  {/* Background Logo with Zoom Effect */}
+  <div className="absolute inset-0 flex items-center justify-center opacity-10">
+    <img 
+      src="/SpendWise-logo.png" 
+      alt="SpendWise Logo" 
+      className="w-64 h-64 object-contain animate-zoom-out"
+    />
+  </div>
+  
+  {/* Animated Rupee Symbols */}
+  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    {/* Left side rupee symbols */}
+    <div className="absolute left-8 top-0 h-full flex flex-col items-center justify-around">
+      {[...Array(6)].map((_, index) => (
+        <div 
+          key={`left-${index}`}
+          className={`text-3xl md:text-4xl font-bold ${isDarkMode ? "text-blue-400/30" : "text-blue-500/20"} 
+            animate-bounce`}
+          style={{
+            animationDuration: `${2 + index * 0.3}s`,
+            animationDelay: `${index * 0.2}s`
+          }}
+        >
           ₹
         </div>
-        <div className={`text-6xl font-bold mt-4 ${isDarkMode ? "text-cyan-400/40" : "text-cyan-500/30"}`}>
+      ))}
+    </div>
+    
+    {/* Right side rupee symbols */}
+    <div className="absolute right-8 top-0 h-full flex flex-col items-center justify-around">
+      {[...Array(6)].map((_, index) => (
+        <div 
+          key={`right-${index}`}
+          className={`text-3xl md:text-4xl font-bold ${isDarkMode ? "text-cyan-400/30" : "text-cyan-500/20"} 
+            animate-bounce`}
+          style={{
+            animationDuration: `${2 + index * 0.3}s`,
+            animationDelay: `${index * 0.2}s`
+          }}
+        >
           ₹
         </div>
-        <div className={`text-3xl font-bold mt-4 ${isDarkMode ? "text-indigo-400/40" : "text-indigo-500/30"}`}>
-          ₹
-        </div>
-      </div>
+      ))}
+    </div>
+  </div>
 
-      {/* Right Rupee Icon */}
-      <div className="absolute right-12 top-1/2 -translate-y-1/2 hidden md:block">
-        <div className={`text-3xl font-bold ${isDarkMode ? "text-indigo-400/40" : "text-indigo-500/30"}`}>
-          ₹
-        </div>
-        <div className={`text-6xl font-bold mt-4 ${isDarkMode ? "text-blue-400/40" : "text-blue-500/30"}`}>
-          ₹
-        </div>
-        <div className={`text-4xl font-bold mt-4 ${isDarkMode ? "text-cyan-400/40" : "text-cyan-500/30"}`}>
-          ₹
-        </div>
-      </div>
-      {/* Content - Adjusted text colors for better contrast in both modes */}
-      <div className="relative max-w-5xl mx-auto text-center">
-        <h1 className="text-5xl font-extrabold bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent tracking-wide drop-shadow-md">
-          SpendWise
-        </h1>
-        <p className={`text-lg mt-3 font-medium tracking-wide ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
-          Your intelligent financial companion
-        </p>
-      </div>
-    </header>
-
+  {/* Content - Adjusted text colors for better contrast in both modes */}
+  <div className="relative max-w-5xl mx-auto text-center">
+    {/* Background Logo specifically for the text content */}
+    <div className="absolute inset-0 flex items-center justify-center z-0">
+      <img 
+        src="/SpendWise-logo.png" 
+        alt="SpendWise Logo Background" 
+        className="w-80 h-80 object-contain opacity-20 animate-zoom-out"
+      />
+    </div>
+    
+    <h1 className="text-5xl font-extrabold bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent tracking-wide drop-shadow-md">
+      SpendWise
+    </h1>
+    <p className={`text-lg mt-3 font-medium tracking-wide ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+      Your intelligent financial companion
+    </p>
+  </div>
+  
+  {/* Custom animations */}
+  <style jsx>{`
+    @keyframes zoom-out {
+      0% {
+        transform: scale(1.4);
+        opacity: 0.05;
+      }
+      50% {
+        transform: scale(0.8);
+        opacity: 0.30;
+      }
+      100% {
+        transform: scale(1.4);
+        opacity: 0.05;
+      }
+    }
+    
+    .animate-zoom-out {
+      animation: zoom-out 18s ease-in-out infinite;
+    }
+  `}</style>
+</header>
 
           {/* Dashboard Content */}
           <div className="p-6">
@@ -528,17 +662,206 @@ useEffect(() => {
           </nav>
           
           <div className="mt-8 hidden md:block">
-            <Card className={`${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-blue-50 border-blue-100"}`}>
-              <CardContent className="p-4">
-                <h3 className="font-medium mb-2">Pro Tip</h3>
-                <p className="text-sm text-gray-500">
-                  Set up recurring expenses to automatically track your monthly bills.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+        <Card className={`${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-blue-50 border-blue-100"}`}>
+          <CardContent className="p-4">
+            <h3 className="font-medium mb-2">Pro Tip</h3>
+            <p className="text-sm text-gray-500 mb-3">
+              Set up recurring expenses to automatically track your monthly bills.
+            </p>
+            <Button 
+              onClick={() => setIsRecurringModalOpen(true)}
+              variant="outline" 
+              size="sm"
+              className={`w-full ${isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-100 hover:bg-blue-200"} text-center`}
+            >
+              Add it now
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
         </div>
       </div>
+
+      <Dialog open={isRecurringModalOpen} onOpenChange={setIsRecurringModalOpen}>
+  <DialogContent className={`p-6 ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
+    <DialogHeader>
+      <DialogTitle className="text-xl font-semibold">Add Recurring Expense</DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-4 my-4">
+      <div>
+        <label className="text-sm font-medium mb-1 block">Title</label>
+        <Input
+          type="text"
+          placeholder={userType === "personal" ? "Phone Bill, Rent, etc." : "Office Rent, Software Subscription, etc."}
+          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          value={recurringExpense.title}
+          onChange={(e) => setRecurringExpense({ ...recurringExpense, title: e.target.value })}
+        />
+      </div>
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Amount (₹)</label>
+        <Input
+          type="number"
+          placeholder="0.00"
+          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          value={recurringExpense.amount}
+          onChange={(e) => setRecurringExpense({ ...recurringExpense, amount: e.target.value })}
+        />
+      </div>
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Category</label>
+        <Select
+          value={recurringExpense.category}
+          onValueChange={(value) => setRecurringExpense({ ...recurringExpense, category: value })}
+        >
+          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            <SelectValue placeholder="Select Category" />
+          </SelectTrigger>
+          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            {recurringCategories.map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Frequency</label>
+        <Select
+          value={recurringExpense.frequency}
+          onValueChange={(value) => setRecurringExpense({ ...recurringExpense, frequency: value })}
+        >
+          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            <SelectValue placeholder="Select Frequency" />
+          </SelectTrigger>
+          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            {frequencies.map((freq) => (
+              <SelectItem key={freq} value={freq}>
+                {freq.charAt(0).toUpperCase() + freq.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium mb-1 block">Start Date</label>
+          <Input
+            type="date"
+            className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+            value={recurringExpense.startDate}
+            onChange={(e) => setRecurringExpense({ ...recurringExpense, startDate: e.target.value })}
+          />
+        </div>
+        
+        <div>
+          <label className="text-sm font-medium mb-1 block">End Date (Optional)</label>
+          <Input
+            type="date"
+            className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+            value={recurringExpense.endDate}
+            onChange={(e) => setRecurringExpense({ ...recurringExpense, endDate: e.target.value })}
+          />
+        </div>
+      </div>
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Payment Method</label>
+        <RadioGroup
+          value={recurringExpense.paymentMethod}
+          onValueChange={(value) => setRecurringExpense({ ...recurringExpense, paymentMethod: value })}
+          className="grid grid-cols-2 gap-2 mt-2"
+        >
+          {paymentMethods.map((method) => (
+  <div key={method} className="flex items-center space-x-2">
+    <RadioGroupItem 
+      value={method} 
+      id={`recurring-${method}`} 
+      className={isDarkMode ? "border-white data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500" : ""}
+    />
+    <Label htmlFor={`recurring-${method}`} className="capitalize">
+      {method}
+    </Label>
+  </div>
+))}
+        </RadioGroup>
+      </div>
+      
+      {userType === "organization" && (
+        <div>
+          <label className="text-sm font-medium mb-1 block">Notes/Reference Number</label>
+          <Input
+            type="text"
+            placeholder="Invoice number, contract reference, etc."
+            className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+            value={recurringExpense.notes}
+            onChange={(e) => setRecurringExpense({ ...recurringExpense, notes: e.target.value })}
+          />
+        </div>
+      )}
+    </div>
+
+    <div className="flex justify-end space-x-4 mt-4">
+      <DialogClose asChild>
+        <Button variant="outline" className={isDarkMode ? "border-gray-600 text-black hover:bg-gray-800 hover:text-white" : ""}>
+          Cancel
+        </Button>
+      </DialogClose>
+      <Button
+        onClick={handleAddRecurringExpense}
+        disabled={!recurringExpense.title || !recurringExpense.amount || !recurringExpense.category || !recurringExpense.startDate}
+        className="bg-blue-600 hover:bg-blue-700 text-white"
+      >
+        Save Recurring Expense
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
+
+{/* Add Another Expense Confirmation - Show this after successful addition */}
+{/* Add Another Expense Confirmation */}
+{showAddAnotherPrompt && (
+  <Dialog open={showAddAnotherPrompt} onOpenChange={setShowAddAnotherPrompt}>
+    <DialogContent className={`p-6 ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
+      <DialogHeader>
+        <DialogTitle className="text-lg font-medium">Expense Added Successfully</DialogTitle>
+      </DialogHeader>
+      
+      <div className="py-4">
+        <p>Would you like to add another recurring expense?</p>
+      </div>
+      
+      <div className="flex justify-end space-x-3">
+        <Button 
+          className={isDarkMode ? "bg-gray-600 hover:bg-red-700 text-white" : ""}
+          onClick={() => {
+            setShowAddAnotherPrompt(false);
+            setIsRecurringModalOpen(false);
+            resetRecurringExpenseForm();
+          }}
+        >
+          No, I'm Done
+        </Button>
+        <Button 
+        variant="outline" 
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          onClick={() => {
+            resetRecurringExpenseForm();
+          }}
+        >
+          Add Another
+        </Button>
+      </div>
+    </DialogContent>
+  </Dialog>
+)}
+
 
       {/* Expense Modal - Using shadcn Dialog */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

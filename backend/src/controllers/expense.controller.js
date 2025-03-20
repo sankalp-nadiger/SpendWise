@@ -1,33 +1,45 @@
 import Expense from "../models/expense.model.js";
+import OrganizationUser from "../models/orgUser.model.js";
 
 // Add new expense
 export const addExpense = async (req, res) => {
   try {
-    console.log("User in request:", req.user); // Debugging line
-    
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized: No user found" });
     }
 
     const userId = req.user._id;
-    const { amount, title, category, description, teamId } = req.body;
+    const { amount, title, category, description, department, teamId } = req.body;
 
+    // Try to fetch the organization details for the user.
+    let organization, branch;
+    const orgUser = await OrganizationUser.findOne({ user: userId });
+
+    if (orgUser) {
+      organization = orgUser.organization;
+      branch = orgUser.branch; // This may be undefined if not set, which is acceptable
+    }
+
+    // Create a new expense record. Organization-specific fields are added only if available.
     const newExpense = new Expense({
-      user: userId, // Make sure this matches schema
+      user: userId,
+      organization,  // undefined for personal expenses
       title,
       amount,
       category,
       description,
+      department,
+      branch,        // undefined for personal expenses
       teamId,
-      createdBy: userId, // Ensure it's properly assigned
+      createdBy: userId,
     });
 
     await newExpense.save();
-    res.status(201).json({ message: "Expense added successfully", expense: newExpense });
-
+    return res.status(201).json({ message: "Expense added successfully", expense: newExpense });
+    
   } catch (error) {
-    console.error("Error adding expense:", error); // Log full error
-    res.status(500).json({ message: "Error adding expense", error: error.message });
+    console.error("Error adding expense:", error);
+    return res.status(500).json({ message: "Error adding expense", error: error.message });
   }
 };
 

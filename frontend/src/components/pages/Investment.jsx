@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, Edit, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit, TrendingUp, TrendingDown, RefreshCw, User } from 'lucide-react';
 import axios from 'axios';
 
 const InvestmentsPage = () => {
@@ -9,12 +9,15 @@ const InvestmentsPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentInvestment, setCurrentInvestment] = useState(null);
+  const [userType, setUserType] = useState('personal');
+  const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
     type: 'stock',
     date: '',
-    notes: ''
+    notes: '',
+    addedBy: '' // New field for organization perspective
   });
 
   // Theme handling
@@ -22,12 +25,33 @@ const InvestmentsPage = () => {
     const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme);
     document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    
+    // Get user type from localStorage
+    const savedUserType = localStorage.getItem('userType') || 'personal';
+    setUserType(savedUserType);
+    
+    // If organization, fetch users for the dropdown
+    if (savedUserType === 'organization') {
+      fetchUsers();
+    }
   }, []);
 
   // Fetch investments
   useEffect(() => {
     fetchInvestments();
   }, []);
+  
+  // Fetch users for organization perspective
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/users', {
+        withCredentials: true
+      });
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
 
   const fetchInvestments = async () => {
     setIsLoading(true);
@@ -61,7 +85,8 @@ const InvestmentsPage = () => {
         amount: '',
         type: 'stock',
         date: '',
-        notes: ''
+        notes: '',
+        addedBy: ''
       });
       fetchInvestments();
     } catch (error) {
@@ -137,12 +162,12 @@ const InvestmentsPage = () => {
       amount: investment.amount,
       type: investment.type,
       date: investment.date ? investment.date.split("T")[0] : '', // Fixing date format
-      notes: investment.notes || ''
+      notes: investment.notes || '',
+      addedBy: investment.addedBy || ''
     });
     setIsEditModalOpen(true);
   };
   
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -174,6 +199,13 @@ const InvestmentsPage = () => {
               <ArrowLeft className="h-6 w-6" />
             </a>
             <h1 className="text-2xl font-bold">Investments</h1>
+            {userType === 'organization' && (
+              <span className={`ml-2 px-3 py-1 text-sm rounded-full ${
+                theme === 'dark' ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'
+              }`}>
+                Organization View
+              </span>
+            )}
           </div>
           <button
             onClick={() => setIsAddModalOpen(true)}
@@ -257,6 +289,17 @@ const InvestmentsPage = () => {
                     {investment.notes}
                   </p>
                 )}
+                
+                {/* Organization: Added by info */}
+                {userType === 'organization' && investment.addedBy && (
+                  <div className="flex items-center mt-3 mb-2">
+                    <User className={`h-4 w-4 mr-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
+                    <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Added by: {investment.addedBy}
+                    </span>
+                  </div>
+                )}
+                
                 <div className={`text-xs uppercase mt-4 inline-block px-2 py-1 rounded ${
                   investment.type === 'stock' ? 'bg-blue-100 text-blue-800' :
                   investment.type === 'crypto' ? 'bg-purple-100 text-purple-800' :
@@ -349,21 +392,24 @@ const InvestmentsPage = () => {
                 />
               </div>
               
-              <div className="mb-4">
-                <label className={`block mb-2 text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Notes (Optional)
-                </label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-lg ${
-                    theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300'
-                  }`}
-                  placeholder="Add any additional notes..."
-                  rows="3"
-                />
-              </div>
+              {/* Added By field for organization users */}
+              {userType === 'organization' && (
+  <div className="mb-4">
+    <label className={`block mb-2 text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+      Team
+    </label>
+    <input
+      type="text"
+      name="teamId"
+      value={formData.addedBy}
+      onChange={handleInputChange}
+      placeholder="Enter your teamId..."
+      className={`w-full px-3 py-2 border rounded-lg ${
+        theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300'
+      }`}
+    />
+  </div>
+)}
               
               <div className="flex justify-end gap-3 mt-6">
                 <button
@@ -464,6 +510,28 @@ const InvestmentsPage = () => {
                   }`}
                 />
               </div>
+              
+              {/* Added By field for organization users */}
+              {userType === 'organization' && (
+                <div className="mb-4">
+                  <label className={`block mb-2 text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Added By
+                  </label>
+                  <select
+                    name="addedBy"
+                    value={formData.addedBy}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 border rounded-lg ${
+                      theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select team member</option>
+                    {users.map(user => (
+                      <option key={user.id} value={user.name}>{user.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               
               <div className="mb-4">
                 <label className={`block mb-2 text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>

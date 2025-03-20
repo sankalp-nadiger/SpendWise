@@ -17,7 +17,15 @@ const categoryConfig = {
   'Office Supplies': { icon: '📌', color: { light: 'bg-cyan-100 text-cyan-800', dark: 'bg-cyan-900 text-cyan-200' } },
   'Hardware': { icon: '💻', color: { light: 'bg-indigo-100 text-indigo-800', dark: 'bg-indigo-900 text-indigo-200' } },
   'Software': { icon: '📱', color: { light: 'bg-pink-100 text-pink-800', dark: 'bg-pink-900 text-pink-200' } },
-  'Other': { icon: '📌', color: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-700 text-gray-200' } }
+  'Other': { icon: '📌', color: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-700 text-gray-200' } },
+'IT Equipment': { icon: '💻', color: { light: 'bg-indigo-100 text-indigo-800', dark: 'bg-indigo-900 text-indigo-200' } },
+'TravelOrg': { icon: '✈️', color: { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-200' } },
+'Meetings': { icon: '👥', color: { light: 'bg-amber-100 text-amber-800', dark: 'bg-amber-900 text-amber-200' } },
+'Marketing': { icon: '📣', color: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-200' } },
+'Training': { icon: '🎓', color: { light: 'bg-green-100 text-green-800', dark: 'bg-green-900 text-green-200' } },
+'Utilities': { icon: '💡', color: { light: 'bg-yellow-100 text-yellow-800', dark: 'bg-yellow-900 text-yellow-200' } },
+'Rent': { icon: '🏢', color: { light: 'bg-red-100 text-red-800', dark: 'bg-red-900 text-red-200' } },
+'Misc': { icon: '📌', color: { light: 'bg-gray-100 text-gray-800', dark: 'bg-gray-700 text-gray-200' } }
 };
 
 function ExpensesPage() {
@@ -27,66 +35,175 @@ function ExpensesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [selectedTeam, setSelectedTeam] = useState('All');
+  const [branches, setBranches] = useState(['Headquarters', 'Regional Office', 'Satellite Office', 'Remote']);
+  const [selectedBranch, setSelectedBranch] = useState('All');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentExpense, setCurrentExpense] = useState(null);
+  // Add these to your state declarations
+const [showEmailModal, setShowEmailModal] = useState(false);
+const [emailAddress, setEmailAddress] = useState('');
+const [emailSending, setEmailSending] = useState(false);
   const [newExpense, setNewExpense] = useState({
     description: '',
     amount: '',
     category: '',
     date: format(new Date(), 'yyyy-MM-dd'),
-    branch: ''
+    branch: '',
+    teamId: '',
+    department: ''
   });
-  const [userType, setUserType] = useState('individual'); // individual or organization
+  const [userType, setuserType] = useState(() => {
+    // Get userType from localStorage or default to "personal"
+    return localStorage.getItem("userType") || "personal";
+  });
   const [darkMode, setDarkMode] = useState(() => {
       const saved = localStorage.getItem("theme");
       return saved === "dark"; // If "dark", set true; otherwise, set false (for "light" or null)
     });
+  
+  // Add this state for departments and teams
+  const [departments, setDepartments] = useState(['Marketing', 'Engineering', 'Finance', 'HR', 'Sales', 'Operations']);
+  const [teams, setTeams] = useState(['Team Alpha', 'Team Beta', 'Team Gamma', 'Core Team', 'Support Team']);
+
   // Add this state to manage the export dropdown
-const [showExportOptions, setShowExportOptions] = useState(false);
+  const [showExportOptions, setShowExportOptions] = useState(false);
 
-// Add these functions to handle export actions
-const handleDownloadReport = () => {
-  // In a real implementation, this would generate a PDF or Excel file
-  alert("Downloading expense report...");
-  
-  // Close the dropdown after action
-  setShowExportOptions(false);
-};
-
-const handleEmailReport = () => {
-  // In a real implementation, this would trigger an API call to send email
-  alert("Sending expense report to your email...");
-  
-  // Close the dropdown after action
-  setShowExportOptions(false);
-};
-// Add this ref to track the dropdown element
-const exportDropdownRef = useRef(null);
-
-// Add this effect to handle clicking outside the dropdown
-useEffect(() => {
-  function handleClickOutside(event) {
-    if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target)) {
-      setShowExportOptions(false);
+ // Updated download function
+const handleDownloadReport = async (fileType) => {
+  try {
+    setLoading(true);
+    
+    // Create filters object to pass to backend
+    const filters = {
+      searchTerm,
+      category: selectedCategory,
+      department: selectedDepartment,
+      team: selectedTeam,
+      branch: selectedBranch,
+      dateRange
+    };
+    
+    // Make API request to generate document
+    const response = await fetch(`http://localhost:8000/api/report/expense/export/${fileType}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ filters }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to generate report');
     }
+    
+    const blob = await response.blob();
+    
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    
+    // Set filename with date
+    const date = new Date().toISOString().split('T')[0];
+    a.download = `expense-report-${date}.${fileType}`;
+    
+    // Trigger download
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    // Close export options dropdown
+    setShowExportOptions(false);
+  } catch (error) {
+    console.error("Error downloading report:", error);
+    alert("Failed to download report. Please try again.");
+  } finally {
+    setLoading(false);
   }
+};
 
-  // Add event listener
-  document.addEventListener('mousedown', handleClickOutside);
+  // Function to handle email sending
+const handleEmailReport = async () => {
+  if (!emailAddress) return;
   
-  // Clean up
-  return () => {
-    document.removeEventListener('mousedown', handleClickOutside);
-  };
-}, [exportDropdownRef]);
+  try {
+    setEmailSending(true);
+    
+    // Create filters object to pass to backend
+    const filters = {
+      searchTerm,
+      category: selectedCategory,
+      department: selectedDepartment,
+      team: selectedTeam,
+      branch: selectedBranch,
+      dateRange
+    };
+    
+    // Make API request to send email
+    const response = await fetch("http://localhost:8000/api/report/expense/email-report", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ 
+        email: emailAddress,
+        filters 
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to send email');
+    }
+    
+    alert("Expense report has been sent to your email.");
+    
+    // Close modal and dropdown
+    setShowEmailModal(false);
+    setShowExportOptions(false);
+    setEmailAddress('');
+  } catch (error) {
+    console.error("Error sending email:", error);
+    alert("Failed to send email. Please try again.");
+  } finally {
+    setEmailSending(false);
+  }
+};
+  
+  // Add this ref to track the dropdown element
+  const exportDropdownRef = useRef(null);
+
+  // Add this effect to handle clicking outside the dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target)) {
+        setShowExportOptions(false);
+      }
+    }
+
+    // Add event listener
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    // Clean up
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [exportDropdownRef]);
+  
   // Fetch data and settings
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/expense", {
+        const url = "http://localhost:8000/api/expense";
+          
+        const response = await axios.get(url, {
           withCredentials: true, // ✅ Send cookies (accessToken)
         });
 
@@ -99,39 +216,55 @@ useEffect(() => {
     };
 
     fetchData();
-  }, []);
+  }, [userType]);
+  
   // Apply filters
-  useEffect(() => {
-    let filtered = expenses;
-    
-    if (searchTerm) {
-      filtered = filtered.filter(expense => 
-        expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expense.category.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(expense => expense.category === selectedCategory);
-    }
-    
-    if (dateRange.start) {
-      filtered = filtered.filter(expense => 
-        new Date(expense.date) >= new Date(dateRange.start)
-      );
-    }
-    
-    if (dateRange.end) {
-      filtered = filtered.filter(expense => 
-        new Date(expense.date) <= new Date(dateRange.end)
-      );
-    }
-    
-    setFilteredExpenses(filtered);
-  }, [searchTerm, selectedCategory, dateRange, expenses]);
+useEffect(() => {
+  let filtered = expenses;
+  
+  if (searchTerm) {
+    filtered = filtered.filter(expense => 
+      expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.category.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+  
+  if (selectedCategory !== 'all') {
+    filtered = filtered.filter(expense => expense.category === selectedCategory);
+  }
+  if (userType === "organization" && selectedBranch !== 'All') {
+    filtered = filtered.filter(expense => expense.branch === selectedBranch);
+  }
+  
+  if (userType === "organization" && selectedDepartment !== 'all') {
+    filtered = filtered.filter(expense => expense.department === selectedDepartment);
+  }
+
+  if (userType === "organization" && selectedTeam !== 'All' && selectedTeam !== '') {
+    filtered = filtered.filter(expense => 
+      expense.teamId && expense.teamId.toLowerCase().includes(selectedTeam.toLowerCase())
+    );
+  }
+  
+  if (dateRange.start) {
+    filtered = filtered.filter(expense => 
+      new Date(expense.date) >= new Date(dateRange.start)
+    );
+  }
+  
+  if (dateRange.end) {
+    filtered = filtered.filter(expense => 
+      new Date(expense.date) <= new Date(dateRange.end)
+    );
+  }
+  
+  setFilteredExpenses(filtered);
+}, [searchTerm, selectedCategory, selectedDepartment, selectedTeam, dateRange, expenses, userType]);
 
   // Get unique categories
-  const categories = ["Food", "Transport", "Shopping", "Entertainment", "Bills", "Other"];
+const categories = userType === "organization" 
+? ["Office Supplies", "IT Equipment", "Software", "Travel", "Meetings", "Marketing", "Training", "Utilities", "Rent", "Misc"] 
+: ["Food", "Transport", "Shopping", "Entertainment", "Bills", "Other"];
   
   // Calculate total amount
   const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -178,8 +311,13 @@ useEffect(() => {
         amount: parseFloat(newExpense.amount),
         category: newExpense.category,
         date: new Date(newExpense.date),
-        branch: userType === 'organization' ? newExpense.branch : undefined
       };
+      
+      // Add organization-specific fields if userType is organization
+      if (userType === "organization") {
+        expenseData.department = newExpense.department;
+        expenseData.teamId = newExpense.teamId;
+      }
       
       // Make API request
       const response = await fetch("http://localhost:8000/api/expense/add", {
@@ -197,16 +335,22 @@ useEffect(() => {
         console.log("Expense Added:", data);
         
         // For demo/development, add to local state until page refresh
-        const newId = (Math.max(...expenses.map(e => parseInt(e.id))) + 1).toString();
+        const newId = (Math.max(...expenses.map(e => parseInt(e.id) || 0)) + 1).toString();
         const newExpenseWithId = {
           id: newId,
           description: newExpense.description,
           amount: parseFloat(newExpense.amount),
           category: newExpense.category,
           date: new Date(newExpense.date),
-          branch: newExpense.branch || 'Headquarters',
           createdBy: { name: 'You' }
         };
+        
+        // Add organizationanization fields if needed
+        if (userType === "organization") {
+          newExpenseWithId.branch = newExpense.branch || 'Headquarters';
+          newExpenseWithId.teamId = newExpense.teamId;
+          newExpenseWithId.department = newExpense.department;
+        }
         
         setExpenses([...expenses, newExpenseWithId]);
         
@@ -217,7 +361,9 @@ useEffect(() => {
           amount: '',
           category: '',
           date: format(new Date(), 'yyyy-MM-dd'),
-          branch: ''
+          branch: '',
+          teamId: '',
+          department: ''
         });
       } else {
         console.error("Failed to add expense");
@@ -243,8 +389,14 @@ useEffect(() => {
         amount: parseFloat(currentExpense.amount),
         category: currentExpense.category,
         date: new Date(currentExpense.date),
-        branch: userType === "organization" ? currentExpense.branch : undefined,
       };
+      
+      // Add organizationanization-specific fields if userType is organization
+      if (userType === "organization") {
+        expenseData.branch = currentExpense.branch;
+        expenseData.teamId = currentExpense.teamId;
+        expenseData.department = currentExpense.department;
+      }
   
       // Make API request with cookies
       const response = await fetch(`http://localhost:8000/api/expense/${currentExpense._id}`, {
@@ -252,7 +404,7 @@ useEffect(() => {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // ✅ Send cookies (accessToken)
+        credentials: "include",
         body: JSON.stringify(expenseData),
       });
   
@@ -282,41 +434,39 @@ useEffect(() => {
     }
   };
 
-
   // Delete expense
   const handleDeleteExpense = async () => {
-  if (!currentExpense) return;
+    if (!currentExpense) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // Make API request with cookies
-    const response = await fetch(`http://localhost:8000/api/expense/${currentExpense._id}`, {
-      method: "DELETE",
-      credentials: "include", // ✅ Send cookies (accessToken)
-    });
+      // Make API request with cookies
+      const response = await fetch(`http://localhost:8000/api/expense/${currentExpense._id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
-    if (response.ok) {
-      console.log("Expense Deleted:", currentExpense.id);
+      if (response.ok) {
+        console.log("Expense Deleted:", currentExpense.id);
 
-      // Update local state
-      const updatedExpenses = expenses.filter((expense) => expense._id !== currentExpense._id);
-      setExpenses(updatedExpenses);
+        // Update local state
+        const updatedExpenses = expenses.filter((expense) => expense._id !== currentExpense._id);
+        setExpenses(updatedExpenses);
 
-      setShowDeleteModal(false);
-      setCurrentExpense(null);
-    } else {
-      console.error("Failed to delete expense");
-      alert("Failed to delete expense. Please try again.");
+        setShowDeleteModal(false);
+        setCurrentExpense(null);
+      } else {
+        console.error("Failed to delete expense");
+        alert("Failed to delete expense. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      alert("Error deleting expense. Please check your connection.");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error deleting expense:", error);
-    alert("Error deleting expense. Please check your connection.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   // Open edit modal with expense data
   const openEditModal = (expense) => {
@@ -337,42 +487,41 @@ useEffect(() => {
   };
 
   // Theme classes based on dark mode
-  // Theme classes based on dark mode
-const theme = {
-  // Main background
-  mainBg: darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-indigo-50 to-blue-50',
-  // Cards
-  card: darkMode ? 'bg-gray-800 shadow-lg' : 'bg-white shadow-xl',
-  // Buttons
-  primaryBtn: darkMode 
-    ? 'bg-indigo-600 hover:bg-indigo-700 text-white' 
-    : 'bg-indigo-600 hover:bg-indigo-700 text-white',
-  secondaryBtn: darkMode 
-    ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-    : 'bg-gray-100 hover:bg-gray-200 text-gray-700',
-  dangerBtn: darkMode
-    ? 'bg-red-600 hover:bg-red-700 text-white'
-    : 'bg-red-600 hover:bg-red-700 text-white',
-  // Text
-  heading: darkMode ? 'text-white' : 'text-gray-900',
-  subheading: darkMode ? 'text-gray-300' : 'text-gray-500',
-  // Inputs
-  input: darkMode 
-    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-    : 'bg-white border-gray-300 text-gray-700 placeholder-gray-400',
-  // Row hover
-  rowHover: darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50',
-  // Table styles
-  table: {
-    header: darkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-500',
-    row: darkMode ? 'hover:bg-gray-700 border-gray-700' : 'hover:bg-gray-50 border-gray-200'
-  },
-  // Modal styles
-  modal: {
-    overlay: darkMode ? 'bg-black bg-opacity-60' : 'bg-black bg-opacity-50',
-    content: darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200',
-  }
-};
+  const theme = {
+    // Main background
+    mainBg: darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-indigo-50 to-blue-50',
+    // Cards
+    card: darkMode ? 'bg-gray-800 shadow-lg' : 'bg-white shadow-xl',
+    // Buttons
+    primaryBtn: darkMode 
+      ? 'bg-indigo-600 hover:bg-indigo-700 text-white' 
+      : 'bg-indigo-600 hover:bg-indigo-700 text-white',
+    secondaryBtn: darkMode 
+      ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+      : 'bg-gray-100 hover:bg-gray-200 text-gray-700',
+    dangerBtn: darkMode
+      ? 'bg-red-600 hover:bg-red-700 text-white'
+      : 'bg-red-600 hover:bg-red-700 text-white',
+    // Text
+    heading: darkMode ? 'text-white' : 'text-gray-900',
+    subheading: darkMode ? 'text-gray-300' : 'text-gray-500',
+    // Inputs
+    input: darkMode 
+      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+      : 'bg-white border-gray-300 text-gray-700 placeholder-gray-400',
+    // Row hover
+    rowHover: darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50',
+    // Table styles
+    table: {
+      header: darkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-500',
+      row: darkMode ? 'hover:bg-gray-700 border-gray-700' : 'hover:bg-gray-50 border-gray-200'
+    },
+    // Modal styles
+    modal: {
+      overlay: darkMode ? 'bg-black bg-opacity-60' : 'bg-black bg-opacity-50',
+      content: darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200',
+    }
+  };
 
   // Render loading spinner
   if (loading) {
@@ -398,7 +547,7 @@ const theme = {
             </Link>
             <div>
               <h1 className={`text-3xl font-bold ${theme.heading}`}>
-                {userType === 'organization' ? 'Organization Expenses' : 'Expense Tracker'}
+                {userType === 'organization' ? 'Organization Expenses' : 'Personal Expense Tracker'}
               </h1>
               <p className={`mt-1 ${theme.subheading}`}>
                 Manage and track your {userType === 'organization' ? 'organization\'s' : 'personal'} expenses
@@ -490,11 +639,60 @@ const theme = {
                 className={`border rounded-lg p-2 w-full ${theme.input}`}
               >
                 <option value="all">All Categories</option>
-                {categories.filter(c => c !== 'all').map(category => (
+                {categories.map(category => (
                   <option key={category} value={category}>{category}</option>
                 ))}
               </select>
             </div>
+
+            {/* Branch filter for organization user */}
+            {userType === "organization" && (
+  <div className="w-48">
+    <label className={`block text-sm font-medium ${theme.subheading} mb-1`}>Branch</label>
+    <div className="relative">
+      <input
+        type="text"
+        value={selectedBranch}
+        onChange={(e) => setSelectedBranch(e.target.value)}
+        placeholder="Filter by branch..."
+        className={`border rounded-lg p-2 w-full ${theme.input}`}
+      />
+    </div>
+  </div>
+)}
+            
+            {/* Show department filter for organizationanization user */}
+            {userType === "organization" && (
+              <div className="w-48">
+                <label className={`block text-sm font-medium ${theme.subheading} mb-1`}>Department</label>
+                <select 
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  className={`border rounded-lg p-2 w-full ${theme.input}`}
+                >
+                  <option value="all">All Departments</option>
+                  {departments.map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            {/* Show team filter for organizationanization user */}
+            {userType === "organization" && (
+  <div className="w-48">
+    <label className={`block text-sm font-medium ${theme.subheading} mb-1`}>Team</label>
+    <div className="relative">
+      <input
+        type="text"
+        value={selectedTeam}
+        onChange={(e) => setSelectedTeam(e.target.value)}
+        placeholder="Filter by team..."
+        className={`border rounded-lg p-2 w-full ${theme.input}`}
+      />
+    </div>
+  </div>
+)}
             
             <div className="w-40">
               <label className={`block text-sm font-medium ${theme.subheading} mb-1`}>From</label>
@@ -507,16 +705,16 @@ const theme = {
             </div>
             
             <div className="w-40">
-  <label className={`block text-sm font-medium ${theme.subheading} mb-1`}>To</label>
-  <input
-    type="date"
-    value={dateRange.end}
-    onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
-    className={`border rounded-lg p-2 w-full ${theme.input}`}
-  />
-</div>
+              <label className={`block text-sm font-medium ${theme.subheading} mb-1`}>To</label>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+                className={`border rounded-lg p-2 w-full ${theme.input}`}
+              />
+            </div>
 
-<div className="relative">
+<div className="relative" ref={exportDropdownRef}>
   <button 
     className={`${theme.secondaryBtn} px-4 py-2 rounded-lg flex items-center gap-2`}
     onClick={() => setShowExportOptions(!showExportOptions)}
@@ -535,16 +733,25 @@ const theme = {
           className={`flex items-center px-4 py-2 text-sm w-full text-left
           ${darkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-700'}`}
           role="menuitem"
-          onClick={handleDownloadReport}
+          onClick={() => handleDownloadReport('pdf')}
         >
           <Download size={16} className="mr-2" />
-          Download to Desktop
+          Download as PDF
         </button>
         <button
           className={`flex items-center px-4 py-2 text-sm w-full text-left
           ${darkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-700'}`}
           role="menuitem"
-          onClick={handleEmailReport}
+          onClick={() => handleDownloadReport('docx')}
+        >
+          <Download size={16} className="mr-2" />
+          Download as Word
+        </button>
+        <button
+          className={`flex items-center px-4 py-2 text-sm w-full text-left
+          ${darkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-700'}`}
+          role="menuitem"
+          onClick={() => setShowEmailModal(true)}
         >
           <Mail size={16} className="mr-2" />
           Send to Email
@@ -558,86 +765,94 @@ const theme = {
 
         {/* Expenses Table */}
         {loading ? (
-          <div className="text-center py-10">
-            <div className={`inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid ${darkMode ? 'border-blue-500 border-r-transparent' : 'border-blue-600 border-r-transparent'}`}></div>
-            <p className={`mt-2 ${theme.subheading}`}>Loading expenses...</p>
-          </div>
-        ) : (
-          <div className={`${theme.card} rounded-lg overflow-hidden`}>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className={theme.table.header}>
-                  <tr>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Date</th>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Category</th>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Description</th>
-                    {userType === 'organization' && (
-                      <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Branch</th>
-                    )}
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Amount</th>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Created By</th>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                  {filteredExpenses.length === 0 ? (
-                    <tr>
-                      <td colSpan={userType === 'organization' ? 7 : 6} className={`px-6 py-8 text-center ${theme.subheading}`}>
-                        No expenses found. Add a new expense to get started.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredExpenses.map(expense => {
-                      const categoryStyle = getCategoryDisplay(expense.category);
-                      
-                      return (
-                        <tr key={expense.id} className={`${theme.table.row} transition-all duration-200`}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {format(new Date(expense.date), 'MMM d, yyyy')}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${categoryStyle.color}`}>
-                              <span className="mr-1">{categoryStyle.icon}</span>
-                              {expense.category}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">{expense.description}</td>
-                          {userType === 'organization' && (
-                            <td className="px-6 py-4">{expense.branch}</td>
-                          )}
-                          <td className="px-6 py-4 font-medium">
-                            {formatCurrency(expense.amount)}
-                          </td>
-                          <td className="px-6 py-4">
-                            {expense.createdBy?.name || 'You'}
-                          </td>
-                          <td className="px-6 py-4">
-  <div className="flex gap-3">
-    <button 
-      className={darkMode ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-800"}
-      onClick={() => openEditModal(expense)}
-    >
-      <Edit size={18} />
-    </button>
-    <button 
-      className={darkMode ? "text-red-400 hover:text-red-300" : "text-red-600 hover:text-red-800"}
-      onClick={() => openDeleteModal(expense)}
-    >
-      <Trash2 size={18} />
-    </button>
+  <div className="text-center py-10">
+    <div className={`inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid ${darkMode ? 'border-blue-500 border-r-transparent' : 'border-blue-600 border-r-transparent'}`}></div>
+    <p className={`mt-2 ${theme.subheading}`}>Loading expenses...</p>
   </div>
-</td>
-                        </tr>
-                      );
-                    })
+) : (
+  <div className={`${theme.card} rounded-lg overflow-hidden`}>
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead className={theme.table.header}>
+          <tr>
+            <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Date</th>
+            <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Category</th>
+            <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Description</th>
+            {userType === 'organization' && (
+              <>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Branch</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Department</th>
+                <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Team</th>
+              </>
+            )}
+            <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Amount</th>
+            <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Created By</th>
+            <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+          {filteredExpenses.length === 0 ? (
+            <tr>
+              <td colSpan={userType === 'organization' ? 9 : 6} className={`px-6 py-8 text-center ${theme.subheading}`}>
+                No expenses found. Add a new expense to get started.
+              </td>
+            </tr>
+          ) : (
+            filteredExpenses.map(expense => {
+              const categoryStyle = getCategoryDisplay(expense.category);
+              
+              return (
+                <tr key={expense.id} className={`${theme.table.row} transition-all duration-200`}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {format(new Date(expense.date), 'MMM d, yyyy')}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${categoryStyle.color}`}>
+                      <span className="mr-1">{categoryStyle.icon}</span>
+                      {expense.category}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">{expense.description}</td>
+                  {userType === 'organization' && (
+                    <>
+                      <td className="px-6 py-4">{expense.branch || '-'}</td>
+                      <td className="px-6 py-4">{expense.department || '-'}</td>
+                      <td className="px-6 py-4">{expense.team || '-'}</td>
+                    </>
                   )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+                  <td className="px-6 py-4 font-medium">
+                    {formatCurrency(expense.amount)}
+                  </td>
+                  <td className="px-6 py-4">
+                    {expense.createdBy?.name || 'You'}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-3">
+                      <button 
+                        className={darkMode ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-800"}
+                        onClick={() => openEditModal(expense)}
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button 
+                        className={darkMode ? "text-red-400 hover:text-red-300" : "text-red-600 hover:text-red-800"}
+                        onClick={() => openDeleteModal(expense)}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
         
-        {/* Add Expense Modal */}
+{/* Add Expense Modal */}
 {showAddModal && (
   <div className="fixed inset-0 flex items-center justify-center z-50">
     <div className={`fixed inset-0 ${theme.modal.overlay}`} onClick={() => setShowAddModal(false)}></div>
@@ -645,6 +860,7 @@ const theme = {
       <h3 className={`text-xl font-semibold mb-4 ${theme.heading}`}>Add New Expense</h3>
       
       <div className="space-y-4">
+        {/* Common fields */}
         <div>
           <label className={`block text-sm font-medium mb-1 ${theme.subheading}`}>Description</label>
           <input
@@ -691,20 +907,36 @@ const theme = {
           />
         </div>
         
+        {/* Organization-specific fields */}
         {userType === 'organization' && (
-          <div>
-            <label className={`block text-sm font-medium mb-1 ${theme.subheading}`}>Branch</label>
-            <input
-              type="text"
-              placeholder="Branch name"
-              className={`w-full px-3 py-2 border rounded-lg ${theme.input}`}
-              value={newExpense.branch}
-              onChange={(e) => setNewExpense({...newExpense, branch: e.target.value})}
-            />
-          </div>
+          <>
+            <div>
+              <label className={`block text-sm font-medium mb-1 ${theme.subheading}`}>Department</label>
+              <select
+                className={`w-full px-3 py-2 border rounded-lg ${theme.input}`}
+                value={newExpense.department}
+                onChange={(e) => setNewExpense({...newExpense, department: e.target.value})}
+              >
+                <option value="">Select Department</option>
+                {departments.map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+  <label className={`block text-sm font-medium mb-1 ${theme.subheading}`}>Team</label>
+  <input
+    type="text"
+    placeholder="Enter Team ID"
+    className={`w-full px-3 py-2 border rounded-lg ${theme.input}`}
+    value={newExpense.teamId}
+    onChange={(e) => setNewExpense({...newExpense, teamId: e.target.value})}
+  />
+</div>
+          </>
         )}
       </div>
-      
       <div className="flex justify-end gap-3 mt-6">
         <button
           onClick={() => setShowAddModal(false)}
@@ -744,7 +976,7 @@ const theme = {
             className={`w-full px-3 py-2 border rounded-lg ${theme.input}`}
             value={currentExpense.description}
             onChange={(e) => setCurrentExpense({...currentExpense, description: e.target.value})}
-          />
+          /> 
         </div>
         
         <div>
@@ -842,6 +1074,45 @@ const theme = {
           className={`px-4 py-2 rounded-lg ${theme.dangerBtn}`}
         >
           Delete
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* Email Modal */}
+{showEmailModal && (
+  <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div className={`fixed inset-0 ${theme.modal.overlay}`} onClick={() => setShowEmailModal(false)}></div>
+    <div className={`relative w-full max-w-md p-6 rounded-lg shadow-xl ${theme.modal.content}`}>
+      <h3 className={`text-xl font-semibold mb-4 ${theme.heading}`}>Send Report by Email</h3>
+      
+      <div>
+        <label className={`block text-sm font-medium mb-1 ${theme.subheading}`}>Email Address</label>
+        <input
+          type="email"
+          placeholder="Enter your email address"
+          className={`w-full px-3 py-2 border rounded-lg ${theme.input}`}
+          value={emailAddress}
+          onChange={(e) => setEmailAddress(e.target.value)}
+        />
+      </div>
+      
+      <div className="flex justify-end gap-3 mt-6">
+        <button
+          onClick={() => setShowEmailModal(false)}
+          className={`px-4 py-2 rounded-lg ${theme.secondaryBtn}`}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleEmailReport}
+          disabled={!emailAddress || emailSending}
+          className={`px-4 py-2 rounded-lg ${theme.primaryBtn} ${
+            (!emailAddress || emailSending) ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          {emailSending ? 'Sending...' : 'Send Report'}
         </button>
       </div>
     </div>

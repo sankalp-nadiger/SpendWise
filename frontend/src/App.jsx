@@ -11,6 +11,7 @@ import ExpensesPage from "./components/pages/Expense"
 import BudgetCalendarPage from "./components/pages/BudgetCalender"
 import ProfilePage from "./components/pages/Profile"
 import Dashboard from "./components/pages/Dashboard"
+import IncomePage from "./components/pages/Income"
 function App() {
     return (
         <Router>
@@ -26,6 +27,7 @@ function App() {
                 <Route path="/budget" element={<BudgetCalendarPage/>} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/income" element={<IncomePage />} />
             </Routes>
         </Router>
     );

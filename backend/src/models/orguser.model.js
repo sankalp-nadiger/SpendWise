@@ -6,7 +6,7 @@ const OrganizationUserSchema = new mongoose.Schema({
   organization: { type: mongoose.Schema.Types.ObjectId, ref: "Organization", required: true },
   role: { type: String, enum: ["admin", "manager", "employee"], required: true },
   joinedAt: { type: Date, default: Date.now },
-  team: { type: String, required: true },
+  branch: { type: String},
 });
 
 const OrganizationUser = mongoose.model("OrganizationUser", OrganizationUserSchema);
