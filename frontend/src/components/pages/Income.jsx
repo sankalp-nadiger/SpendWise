@@ -4,15 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'react-hot-toast';
-
+import EditIncomeModal from '../EditIncome';
 const IncomePage = () => {
   const [incomes, setIncomes] = useState([]);
   const [recurringIncomes, setRecurringIncomes] = useState([]);
-  const [userType, setUserType] = useState("personal"); // "personal" or "organization"
+  const [userType, setUserType] = useState(() => {
+    return localStorage.getItem("userType") || "individual";
+  });
+   // "individual" or "organization"
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
   const [isRecurringListOpen, setIsRecurringListOpen] = useState(false);
@@ -23,6 +23,7 @@ const IncomePage = () => {
   const [totalIncome, setTotalIncome] = useState(0);
   const [currentMonthIncome, setCurrentMonthIncome] = useState(0);
   const [incomeCount, setIncomeCount] = useState(0);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Form states
   const [newIncome, setNewIncome] = useState({
@@ -70,7 +71,6 @@ const IncomePage = () => {
         withCredentials: true
       });
       setIncomes(response.data);
-      console.log(response.data)
     } catch (error) {
       console.error("Error fetching incomes:", error);
       toast.error("Failed to fetch income data");
@@ -176,29 +176,6 @@ const IncomePage = () => {
     }
   };
 
-  const handleUpdateIncome = async (id, updatedData) => {
-    try {
-      const response = await axios.put(`http://localhost:8000/api/income/${id}`, updatedData, {
-        withCredentials: true
-      });
-      
-      if (updatedData.isRecurring) {
-        setRecurringIncomes(recurringIncomes.map(income => 
-          income._id === id ? response.data : income
-        ));
-      } else {
-        setIncomes(incomes.map(income => 
-          income._id === id ? response.data : income
-        ));
-      }
-      
-      toast.success("Income updated successfully!");
-    } catch (error) {
-      console.error("Error updating income:", error);
-      toast.error("Failed to update income");
-    }
-  };
-
   const handleDeleteIncome = async (id, isRecurring) => {
     if (!window.confirm("Are you sure you want to delete this income?")) {
       return;
@@ -283,18 +260,11 @@ const IncomePage = () => {
             <p className="text-gray-500">Manage and track your income</p>
           </div>
           <div className="flex items-center space-x-4">
-            <div>
-              <label className="inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={userType === "organization"}
-                  onChange={() => setUserType(userType === "personal" ? "organization" : "personal")}
-                />
-                <div className={`relative w-11 h-6 ${isDarkMode ? "bg-gray-700" : "bg-gray-200"} peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600`}></div>
-                <span className="ml-3 text-sm font-medium">{userType === "personal" ? "Personal" : "Organization"}</span>
-              </label>
-            </div>
+          <div className="flex items-center mb-4">
+  <span className={`text-sm font-medium ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
+    {userType === "individual" ? "individual Mode" : "Organization Mode"}
+  </span>
+</div>
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
@@ -458,7 +428,7 @@ const IncomePage = () => {
               {filteredIncomes.length > 0 ? (
                 filteredIncomes.map((income) => (
                   <tr key={income._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">{new Date(income.date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDateDDMMYYYY(new Date(income.date).toLocaleDateString())}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className="px-2 py-1 rounded text-xs font-semibold" style={{ 
                         backgroundColor: getCategoryColor(income.category, isDarkMode),
@@ -482,7 +452,7 @@ const IncomePage = () => {
                         onClick={() => {
                           // Open edit modal with pre-filled data
                           setNewIncome(income);
-                          setIsAddModalOpen(true);
+                          setIsEditModalOpen(true);
                         }}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -511,409 +481,429 @@ const IncomePage = () => {
           </table>
         </div>
       </div>
+              {/* Add Income Modal */}
+              <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+  <DialogContent className={`p-6 max-h-[90vh] overflow-y-auto ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
+    <DialogHeader>
+      <DialogTitle className="text-xl font-semibold">"Add Income"</DialogTitle>
+    </DialogHeader>
 
-      {/* Add Income Modal */}
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className={`p-6 ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">{newIncome._id ? "Edit Income" : "Add Income"}</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 my-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Title</label>
+    <div className="space-y-4 my-4">
+      <div>
+        <label className="text-sm font-medium mb-1 block">Title</label>
+        <Input
+          type="text"
+          placeholder={userType === "individual" ? "Salary, Freelance work, etc." : "Product sales, Service fees, etc."}
+          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          value={newIncome.title}
+          onChange={(e) => setNewIncome({ ...newIncome, title: e.target.value })}
+        />
+      </div>
+      
+      {userType === "individual" ? (
+        <div>
+          <label className="text-sm font-medium mb-1 block">Amount (₹)</label>
+          <Input
+            type="number"
+            placeholder="0.00"
+            className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+            value={newIncome.amount}
+            onChange={(e) => setNewIncome({ ...newIncome, amount: e.target.value })}
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block">Units</label>
+            <Input
+              type="number"
+              placeholder="Quantity"
+              className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+              value={newIncome.units}
+              onChange={(e) => setNewIncome({ ...newIncome, units: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Price per Unit (₹)</label>
+            <Input
+              type="number"
+              placeholder="0.00"
+              className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+              value={newIncome.pricePerUnit}
+              onChange={(e) => setNewIncome({ ...newIncome, pricePerUnit: e.target.value })}
+            />
+          </div>
+          {newIncome.units && newIncome.pricePerUnit && (
+            <div className="col-span-2">
+              <label className="text-sm font-medium mb-1 block">Total Amount (₹)</label>
               <Input
                 type="text"
-                placeholder={userType === "personal" ? "Salary, Freelance work, etc." : "Product sales, Service fees, etc."}
-                className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                value={newIncome.title}
-                onChange={(e) => setNewIncome({ ...newIncome, title: e.target.value })}
+                readOnly
+                className={`${isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""} cursor-not-allowed`}
+                value={(parseFloat(newIncome.units) * parseFloat(newIncome.pricePerUnit)).toFixed(2)}
               />
             </div>
-            
-            {userType === "personal" ? (
-              <div>
-                <label className="text-sm font-medium mb-1 block">Amount (₹)</label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                  value={newIncome.amount}
-                  onChange={(e) => setNewIncome({ ...newIncome, amount: e.target.value })}
-                />
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Units</label>
-                  <Input
-                    type="number"
-                    placeholder="Quantity"
-                    className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                    value={newIncome.units}
-                    onChange={(e) => setNewIncome({ ...newIncome, units: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Price per Unit (₹)</label>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                    value={newIncome.pricePerUnit}
-                    onChange={(e) => setNewIncome({ ...newIncome, pricePerUnit: e.target.value })}
-                  />
-                </div>
-                {newIncome.units && newIncome.pricePerUnit && (
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium mb-1 block">Total Amount (₹)</label>
-                    <Input
-                      type="text"
-                      readOnly
-                      className={`${isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""} cursor-not-allowed`}
-                      value={(parseFloat(newIncome.units) * parseFloat(newIncome.pricePerUnit)).toFixed(2)}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Category</label>
-              <Select
-                value={newIncome.category}
-                onValueChange={(value) => setNewIncome({ ...newIncome, category: value })}
-              >
-                <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
-                  <SelectValue placeholder="Select Category" />
-                </SelectTrigger>
-                <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                      </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Date</label>
-              <Input
-                type="date"
-                className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                value={newIncome.date}
-                onChange={(e) => setNewIncome({ ...newIncome, date: e.target.value })}
-              />
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Source</label>
-              <Select
-                value={newIncome.source}
-                onValueChange={(value) => setNewIncome({ ...newIncome, source: value })}
-              >
-                <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
-                  <SelectValue placeholder="Select Source" />
-                </SelectTrigger>
-                <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
-                  {sources.map((source) => (
-                    <SelectItem key={source} value={source}>
-                      {source}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Notes (Optional)</label>
-              <Input
-                type="text"
-                placeholder="Additional information"
-                className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                value={newIncome.notes}
-                onChange={(e) => setNewIncome({ ...newIncome, notes: e.target.value })}
-              />
-            </div>
+          )}
+        </div>
+      )}
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Category</label>
+        <Select
+          value={newIncome.category}
+          onValueChange={(value) => setNewIncome({ ...newIncome, category: value })}
+        >
+          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            <SelectValue placeholder="Select Category" />
+          </SelectTrigger>
+          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            {categories.map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Date</label>
+        <Input
+          type="date"
+          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          value={newIncome.date}
+          onChange={(e) => setNewIncome({ ...newIncome, date: e.target.value })}
+        />
+      </div>
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Source</label>
+        <Select
+          value={newIncome.source}
+          onValueChange={(value) => setNewIncome({ ...newIncome, source: value })}
+        >
+          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            <SelectValue placeholder="Select Source" />
+          </SelectTrigger>
+          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            {sources.map((source) => (
+              <SelectItem key={source} value={source}>
+                {source}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Notes (Optional)</label>
+        <Input
+          type="text"
+          placeholder="Additional information"
+          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          value={newIncome.notes}
+          onChange={(e) => setNewIncome({ ...newIncome, notes: e.target.value })}
+        />
+      </div>
+    </div>
+
+    <div className="flex justify-end space-x-4 mt-4">
+      <DialogClose asChild>
+        <Button variant="outline" className={isDarkMode ? "bg-gray-600 hover:bg-red-700 text-white" : ""}>
+          Cancel
+        </Button>
+      </DialogClose>
+      <Button
+        onClick={handleAddIncome}
+        disabled={!newIncome.title || (userType === "individual" ? !newIncome.amount : (!newIncome.units || !newIncome.pricePerUnit)) || !newIncome.category}
+        className="bg-blue-600 hover:bg-blue-700 text-white"
+      >
+        {newIncome._id ? "Update" : "Save"} Income
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
+
+{/* Add Recurring Income Modal */}
+<Dialog open={isRecurringModalOpen} onOpenChange={setIsRecurringModalOpen}>
+  <DialogContent className={`p-6 max-h-[90vh] overflow-y-auto ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
+    <DialogHeader>
+      <DialogTitle className="text-xl font-semibold">Add Recurring Income</DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-4 my-4">
+      <div>
+        <label className="text-sm font-medium mb-1 block">Title</label>
+        <Input
+          type="text"
+          placeholder={userType === "individual" ? "Salary, Rent Income, etc." : "Subscription Fees, Retainer Payments, etc."}
+          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          value={recurringIncome.title}
+          onChange={(e) => setRecurringIncome({ ...recurringIncome, title: e.target.value })}
+        />
+      </div>
+      
+      {userType === "individual" ? (
+        <div>
+          <label className="text-sm font-medium mb-1 block">Amount (₹)</label>
+          <Input
+            type="number"
+            placeholder="0.00"
+            className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+            value={recurringIncome.amount}
+            onChange={(e) => setRecurringIncome({ ...recurringIncome, amount: e.target.value })}
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block">Units</label>
+            <Input
+              type="number"
+              placeholder="Quantity"
+              className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+              value={recurringIncome.units}
+              onChange={(e) => setRecurringIncome({ ...recurringIncome, units: e.target.value })}
+            />
           </div>
-
-          <div className="flex justify-end space-x-4 mt-4">
-            <DialogClose asChild>
-              <Button variant="outline" className={isDarkMode ? "bg-gray-600 hover:bg-red-700 text-white" : ""}>
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button
-              onClick={handleAddIncome}
-              disabled={!newIncome.title || (userType === "personal" ? !newIncome.amount : (!newIncome.units || !newIncome.pricePerUnit)) || !newIncome.category}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {newIncome._id ? "Update" : "Save"} Income
-            </Button>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Price per Unit (₹)</label>
+            <Input
+              type="number"
+              placeholder="0.00"
+              className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+              value={recurringIncome.pricePerUnit}
+              onChange={(e) => setRecurringIncome({ ...recurringIncome, pricePerUnit: e.target.value })}
+            />
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Recurring Income Modal */}
-      <Dialog open={isRecurringModalOpen} onOpenChange={setIsRecurringModalOpen}>
-        <DialogContent className={`p-6 ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">Add Recurring Income</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 my-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Title</label>
-              <Input
-                type="text"
-                placeholder={userType === "personal" ? "Salary, Rent Income, etc." : "Subscription Fees, Retainer Payments, etc."}
-                className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                value={recurringIncome.title}
-                onChange={(e) => setRecurringIncome({ ...recurringIncome, title: e.target.value })}
-              />
-            </div>
-            
-            {userType === "personal" ? (
-              <div>
-                <label className="text-sm font-medium mb-1 block">Amount (₹)</label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                  value={recurringIncome.amount}
-                  onChange={(e) => setRecurringIncome({ ...recurringIncome, amount: e.target.value })}
-                />
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Units</label>
-                  <Input
-                    type="number"
-                    placeholder="Quantity"
-                    className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                    value={recurringIncome.units}
-                    onChange={(e) => setRecurringIncome({ ...recurringIncome, units: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Price per Unit (₹)</label>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                    value={recurringIncome.pricePerUnit}
-                    onChange={(e) => setRecurringIncome({ ...recurringIncome, pricePerUnit: e.target.value })}
-                  />
-                </div>
-                {recurringIncome.units && recurringIncome.pricePerUnit && (
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium mb-1 block">Total Amount (₹)</label>
-                    <Input
-                      type="text"
-                      readOnly
-                      className={`${isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""} cursor-not-allowed`}
-                      value={(parseFloat(recurringIncome.units) * parseFloat(recurringIncome.pricePerUnit)).toFixed(2)}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Category</label>
-              <Select
-                value={recurringIncome.category}
-                onValueChange={(value) => setRecurringIncome({ ...recurringIncome, category: value })}
-              >
-                <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
-                  <SelectValue placeholder="Select Category" />
-                </SelectTrigger>
-                <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
-                  {recurringCategories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Frequency</label>
-              <Select
-                value={recurringIncome.frequency}
-                onValueChange={(value) => setRecurringIncome({ ...recurringIncome, frequency: value })}
-              >
-                <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
-                  <SelectValue placeholder="Select Frequency" />
-                </SelectTrigger>
-                <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
-                  {frequencies.map((freq) => (
-                    <SelectItem key={freq} value={freq}>
-                      {freq.charAt(0).toUpperCase() + freq.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Start Date</label>
-                <Input
-                  type="date"
-                  className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                  value={recurringIncome.startDate}
-                  onChange={(e) => setRecurringIncome({ ...recurringIncome, startDate: e.target.value })}
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-1 block">End Date (Optional)</label>
-                <Input
-                  type="date"
-                  className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                  value={recurringIncome.endDate}
-                  onChange={(e) => setRecurringIncome({ ...recurringIncome, endDate: e.target.value })}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Source</label>
-              <Select
-                value={recurringIncome.source}
-                onValueChange={(value) => setRecurringIncome({ ...recurringIncome, source: value })}
-              >
-                <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
-                  <SelectValue placeholder="Select Source" />
-                </SelectTrigger>
-                <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
-                  {sources.map((source) => (
-                    <SelectItem key={source} value={source}>
-                      {source}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-1 block">Notes (Optional)</label>
+          {recurringIncome.units && recurringIncome.pricePerUnit && (
+            <div className="col-span-2">
+              <label className="text-sm font-medium mb-1 block">Total Amount (₹)</label>
               <Input
                 type="text"
-                placeholder="Contract ID, reference, etc."
-                className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
-                value={recurringIncome.notes}
-                onChange={(e) => setRecurringIncome({ ...recurringIncome, notes: e.target.value })}
+                readOnly
+                className={`${isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""} cursor-not-allowed`}
+                value={(parseFloat(recurringIncome.units) * parseFloat(recurringIncome.pricePerUnit)).toFixed(2)}
               />
             </div>
-          </div>
+          )}
+        </div>
+      )}
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Category</label>
+        <Select
+          value={recurringIncome.category}
+          onValueChange={(value) => setRecurringIncome({ ...recurringIncome, category: value })}
+        >
+          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            <SelectValue placeholder="Select Category" />
+          </SelectTrigger>
+          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            {recurringCategories.map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Frequency</label>
+        <Select
+          value={recurringIncome.frequency}
+          onValueChange={(value) => setRecurringIncome({ ...recurringIncome, frequency: value })}
+        >
+          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            <SelectValue placeholder="Select Frequency" />
+          </SelectTrigger>
+          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            {frequencies.map((freq) => (
+              <SelectItem key={freq} value={freq}>
+                {freq.charAt(0).toUpperCase() + freq.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium mb-1 block">Start Date</label>
+          <Input
+            type="date"
+            className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+            value={recurringIncome.startDate}
+            onChange={(e) => setRecurringIncome({ ...recurringIncome, startDate: e.target.value })}
+          />
+        </div>
+        
+        <div>
+          <label className="text-sm font-medium mb-1 block">End Date (Optional)</label>
+          <Input
+            type="date"
+            className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+            value={recurringIncome.endDate}
+            onChange={(e) => setRecurringIncome({ ...recurringIncome, endDate: e.target.value })}
+          />
+        </div>
+      </div>
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Source</label>
+        <Select
+          value={recurringIncome.source}
+          onValueChange={(value) => setRecurringIncome({ ...recurringIncome, source: value })}
+        >
+          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            <SelectValue placeholder="Select Source" />
+          </SelectTrigger>
+          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+            {sources.map((source) => (
+              <SelectItem key={source} value={source}>
+                {source}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div>
+        <label className="text-sm font-medium mb-1 block">Notes (Optional)</label>
+        <Input
+          type="text"
+          placeholder="Contract ID, reference, etc."
+          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          value={recurringIncome.notes}
+          onChange={(e) => setRecurringIncome({ ...recurringIncome, notes: e.target.value })}
+        />
+      </div>
+    </div>
 
-          <div className="flex justify-end space-x-4 mt-4">
-            <DialogClose asChild>
-              <Button variant="outline" className={isDarkMode ? "bg-gray-600 hover:bg-red-700 text-white" : ""}>
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button
-              onClick={handleAddRecurringIncome}
-              disabled={!recurringIncome.title || (userType === "personal" ? !recurringIncome.amount : (!recurringIncome.units || !recurringIncome.pricePerUnit)) || !recurringIncome.category || !recurringIncome.startDate}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Save Recurring Income
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+    <div className="flex justify-end space-x-4 mt-4">
+      <DialogClose asChild>
+        <Button variant="outline" className={isDarkMode ? "bg-gray-600 hover:bg-red-700 text-white" : ""}>
+          Cancel
+        </Button>
+      </DialogClose>
+      <Button
+        onClick={handleAddRecurringIncome}
+        disabled={!recurringIncome.title || (userType === "individual" ? !recurringIncome.amount : (!recurringIncome.units || !recurringIncome.pricePerUnit)) || !recurringIncome.category || !recurringIncome.startDate}
+        className="bg-blue-600 hover:bg-blue-700 text-white"
+      >
+        Save Recurring Income
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
 
       {/* View Recurring Incomes Modal */}
       <Dialog open={isRecurringListOpen} onOpenChange={setIsRecurringListOpen}>
-        <DialogContent className={`p-6 max-w-4xl ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">Recurring Incomes</DialogTitle>
-          </DialogHeader>
+  <DialogContent className={`p-6 max-w-4xl ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
+    <DialogHeader>
+      <DialogTitle className="text-xl font-semibold">Recurring Incomes</DialogTitle>
+    </DialogHeader>
 
-          <div className="mt-4">
-            {recurringIncomes.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-700">
-                  <thead className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
-                    <tr>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Title</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Category</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Amount</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Frequency</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Next Date</th>
-                      <th scope="col" className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className={`divide-y ${isDarkMode ? "divide-gray-700" : "divide-gray-200"}`}>
-                    {recurringIncomes.map((income) => (
-                      <tr key={income._id}>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">{income.title}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <span className="px-2 py-1 rounded text-xs font-semibold" style={{ 
-                            backgroundColor: getCategoryColor(income.category, isDarkMode),
-                            color: 'white' 
-                          }}>
-                            {income.category}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">{formatCurrency(income.amount)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm capitalize">{income.frequency}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">{getNextOccurrenceDate(income.startDate, income.frequency)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                          <button 
-                            className="text-blue-500 hover:text-blue-700 mr-3"
-                            onClick={() => {
-                              setRecurringIncome(income);
-                              setIsRecurringModalOpen(true);
-                              setIsRecurringListOpen(false);
-                            }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button 
-                            className="text-red-500 hover:text-red-700"
-                            onClick={() => {
-                              handleDeleteIncome(income._id, true);
-                              if (recurringIncomes.length === 1) {
-                                setIsRecurringListOpen(false);
-                              }
-                            }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-gray-500">No recurring incomes found. Add your first recurring income.</p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end mt-4">
-            <DialogClose asChild>
-              <Button className={isDarkMode ? "bg-gray-700 hover:bg-gray-600 text-white" : ""}>
-                Close
-              </Button>
-            </DialogClose>
-          </div>
-        </DialogContent>
-      </Dialog>
+    <div className="mt-4">
+      {recurringIncomes.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-700">
+            <thead className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
+              <tr>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Title</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Category</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Amount</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Frequency</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Next Date</th>
+                <th scope="col" className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className={`divide-y ${isDarkMode ? "divide-gray-700" : "divide-gray-200"}`}>
+              {recurringIncomes.map((income) => (
+                <tr key={income._id}>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">{income.title}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <span className="px-2 py-1 rounded text-xs font-semibold" style={{ 
+                      backgroundColor: getCategoryColor(income.category, isDarkMode),
+                      color: 'white' 
+                    }}>
+                      {income.category}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">{formatCurrency(income.amount)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm capitalize">{income.frequency}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm">{getNextOccurrenceDate(income.startDate, income.frequency)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                    <button 
+                      className="text-blue-500 hover:text-blue-700 mr-3"
+                      onClick={() => {
+                        // Set the income to edit
+                        setNewIncome({
+                          ...income,
+                          date: income.startDate ? new Date(income.startDate).toISOString().split('T')[0] : '',
+                          isRecurring: true,
+                        });
+                        // Open edit modal and close the recurring list
+                        setIsEditModalOpen(true);
+                        setIsRecurringListOpen(false);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button 
+                      className="text-red-500 hover:text-red-700"
+                      onClick={() => {
+                        handleDeleteIncome(income._id, true);
+                        if (recurringIncomes.length === 1) {
+                          setIsRecurringListOpen(false);
+                        }
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-center py-6">
+          <p className="text-gray-500">No recurring incomes found. Add your first recurring income.</p>
+        </div>
+      )}
     </div>
+
+    <div className="flex justify-end mt-4">
+      <DialogClose asChild>
+        <Button className={isDarkMode ? "bg-gray-700 hover:bg-gray-600 text-white" : ""}>
+          Close
+        </Button>
+      </DialogClose>
+    </div>
+  </DialogContent>
+</Dialog>
+<EditIncomeModal
+  isEditModalOpen={isEditModalOpen}
+  setIsEditModalOpen={setIsEditModalOpen}
+  newIncome={newIncome}
+  setNewIncome={setNewIncome}
+  userType={userType}
+  isDarkMode={isDarkMode}
+  categories={categories}
+  sources={sources}
+  incomes={incomes}
+  setIncomes={setIncomes}
+  recurringIncomes={recurringIncomes}
+  setRecurringIncomes={setRecurringIncomes}
+/>
+    </div>
+    
   );
 };
 
@@ -971,7 +961,23 @@ const getNextOccurrenceDate = (startDate, frequency) => {
     }
   }
   
-  return nextDate.toLocaleDateString();
+  return formatDateDDMMYYYY(nextDate.toLocaleDateString());
 };
+function formatDateDDMMYYYY(date) {
+  const d = new Date(date);
+  
+  // Check if date is valid
+  if (isNaN(d.getTime())) {
+    return "Invalid date";
+  }
+  
+  // Get day, month, and year
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+  const year = d.getFullYear();
+  
+  // Return in DD/MM/YYYY format
+  return `${day}/${month}/${year}`;
+}
 
 export default IncomePage;
