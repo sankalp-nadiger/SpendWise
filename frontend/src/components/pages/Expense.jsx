@@ -10,6 +10,7 @@ import axios from 'axios';
 // Category configurations
 const categoryConfig = {
   'Food': { icon: '🍽️', color: { light: 'bg-emerald-100 text-emerald-800', dark: 'bg-emerald-900 text-emerald-200' } },
+  'Health': { icon: '💊', color: { light: 'bg-red-100 text-red-800', dark: 'bg-red-900 text-red-200' } },
   'Travel': { icon: '🚗', color: { light: 'bg-blue-100 text-blue-800', dark: 'bg-blue-900 text-blue-200' } },
   'Shopping': { icon: '🛍️', color: { light: 'bg-purple-100 text-purple-800', dark: 'bg-purple-900 text-purple-200' } },
   'Entertainment': { icon: '🎮', color: { light: 'bg-amber-100 text-amber-800', dark: 'bg-amber-900 text-amber-200' } },
@@ -68,12 +69,10 @@ const [emailSending, setEmailSending] = useState(false);
   
   // Add this state for departments and teams
   const [departments, setDepartments] = useState(['Marketing', 'Engineering', 'Finance', 'HR', 'Sales', 'Operations']);
-  const [teams, setTeams] = useState(['Team Alpha', 'Team Beta', 'Team Gamma', 'Core Team', 'Support Team']);
 
   // Add this state to manage the export dropdown
   const [showExportOptions, setShowExportOptions] = useState(false);
 
- // Updated download function
 const handleDownloadReport = async (fileType) => {
   try {
     setLoading(true);
@@ -89,38 +88,49 @@ const handleDownloadReport = async (fileType) => {
     };
     
     // Make API request to generate document
-    const response = await fetch(`http://localhost:8000/api/report/expense/export/${fileType}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({ filters }),
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to generate report');
-    }
-    
-    const blob = await response.blob();
-    
-    // Create download link
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    
-    // Set filename with date
-    const date = new Date().toISOString().split('T')[0];
-    a.download = `expense-report-${date}.${fileType}`;
-    
-    // Trigger download
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    
-    // Close export options dropdown
-    setShowExportOptions(false);
+const filenameResponse = await fetch(`http://localhost:8000/api/report/expense/filename/${fileType}`, {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  credentials: "include",
+});
+
+if (!filenameResponse.ok) {
+  throw new Error('Failed to generate filename');
+}
+
+const { filename } = await filenameResponse.json();
+
+const response = await fetch(`http://localhost:8000/api/report/expense/export/${fileType}`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  credentials: "include",
+  body: JSON.stringify({ filters }),
+});
+
+if (!response.ok) {
+  throw new Error('Failed to generate report');
+}
+
+const blob = await response.blob();
+
+// Create download link with the pre-fetched filename
+const url = window.URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.style.display = 'none';
+a.href = url;
+a.download = filename;
+
+// Trigger download
+document.body.appendChild(a);
+a.click();
+window.URL.revokeObjectURL(url);
+
+// Close export options dropdown
+setShowExportOptions(false);
   } catch (error) {
     console.error("Error downloading report:", error);
     alert("Failed to download report. Please try again.");
@@ -261,12 +271,11 @@ useEffect(() => {
   setFilteredExpenses(filtered);
 }, [searchTerm, selectedCategory, selectedDepartment, selectedTeam, dateRange, expenses, userType]);
 
-  // Get unique categories
+
 const categories = userType === "organization" 
 ? ["Office Supplies", "IT Equipment", "Software", "Travel", "Meetings", "Marketing", "Training", "Utilities", "Rent", "Misc"] 
-: ["Food", "Transport", "Shopping", "Entertainment", "Bills", "Other"];
-  
-  // Calculate total amount
+: ["Food", "Transport", "Shopping", "Entertainment", "Bills", "Health", "Other"];
+
   const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   // Toggle dark mode
@@ -301,8 +310,7 @@ const categories = userType === "organization"
     try {
       // Show loading
       setLoading(true);
-      
-      // Get token from storage
+
       const token = localStorage.getItem("accessToken");
       
       // Prepare the expense object
@@ -312,8 +320,7 @@ const categories = userType === "organization"
         category: newExpense.category,
         date: new Date(newExpense.date),
       };
-      
-      // Add organization-specific fields if userType is organization
+
       if (userType === "organization") {
         expenseData.department = newExpense.department;
         expenseData.teamId = newExpense.teamId;

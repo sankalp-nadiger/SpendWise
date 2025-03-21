@@ -12,6 +12,7 @@ import BudgetCalendarPage from "./components/pages/BudgetCalender"
 import ProfilePage from "./components/pages/Profile"
 import Dashboard from "./components/pages/Dashboard"
 import IncomePage from "./components/pages/Income"
+import AuditDashboard from "./components/AuditDashboard"
 function App() {
     return (
         <Router>
@@ -28,6 +29,7 @@ function App() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/income" element={<IncomePage />} />
+                <Route path="/audit" element={<AuditDashboard />} />
             </Routes>
         </Router>
     );

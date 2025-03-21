@@ -22,6 +22,7 @@ const userSchema = new mongoose.Schema({
     enum: ["personal", "organization"],
     required: true
   },
+  telegramChatId: { type: String, unique: true, sparse: true },
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -2,9 +2,8 @@ import { Document, Packer, Paragraph, Table, TableRow, TableCell, BorderStyle, A
 import PDFDocument from "pdfkit";
 import Expense from "../models/expense.model.js";
 import OrganizationUser from "../models/orgUser.model.js";
-import transporter from "../../app.js"; // adjust path to your mailer configuration
+import transporter from "../../app.js";
 
-// Helper function to remove empty fields from an object
 function filterNonEmptyFields(expense) {
   // If expense is a Mongoose document, convert to plain object first
   const obj = expense.toObject ? expense.toObject() : expense;
@@ -19,15 +18,14 @@ function filterNonEmptyFields(expense) {
 }
 
 // Helper function to generate a unique filename
-function generateUniqueFilename(fileType) {
-  const timestamp = Date.now(); // returns the milliseconds since epoch
-  const randomString = Math.random().toString(36).substring(2, 8);
+function generateUniqueFilename(fileType = 'pdf') {
+  const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '');
+  const randomString = Math.random().toString(36).substring(2, 10);
   return `expense-report-${timestamp}-${randomString}.${fileType}`;
 }
 
 
 
-// Helper: Format field names for display (capitalize first letter, add spaces before uppercase letters)
 const formatFieldName = (field) => {
   if (field === 'id') return 'ID';
   return field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1');
@@ -41,7 +39,6 @@ export const downloadExpenseReport = async (req, res) => {
 
     // Generate unique filename for this report
     const uniqueFilename = generateUniqueFilename(fileType);
-    console.log("Generated Filename:", uniqueFilename);
 
     // Determine if the user is an organization user
     const orgUser = await OrganizationUser.findOne({ user: userId });
@@ -65,12 +62,11 @@ export const downloadExpenseReport = async (req, res) => {
       }
     }
 
-    // Fetch expenses (populate createdBy so we have the user's name) and sort them by date in descending order
+    // Fetch expenses
     let expenses = await Expense.find(query)
       .populate("createdBy", "name")
       .sort({ date: -1 });
 
-    // Filter out empty fields from each expense record
     expenses = expenses.map(expense => filterNonEmptyFields(expense));
 
     // Get all possible field names from the expenses (exclude internal fields)
@@ -349,6 +345,12 @@ export const EmailSender = async (req, res) => {
     console.error("Error sending expense report:", error);
     res.status(500).json({ message: "Failed to send expense report" });
   }
+};
+
+export const getReportFilename = async (req, res) => {
+  const { fileType } = req.params;
+  const uniqueFilename = generateUniqueFilename(fileType);
+  res.json({ filename: uniqueFilename });
 };
 
 // Helper function to generate PDF buffer (for email attachments)

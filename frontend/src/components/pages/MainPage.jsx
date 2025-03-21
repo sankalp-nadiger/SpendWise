@@ -12,7 +12,7 @@ import { ArrowDown, DollarSign } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import axios from 'axios';
-import { BarChart3, PieChart, FileText, Bot, Plus, Home, Settings, CreditCard, TrendingUp, Calendar, ExternalLink, Zap, LogOut } from "lucide-react";
+import { BarChart3, PieChart, FileText, Bot, Plus, Home, Settings, CreditCard, TrendingUp, Clipboard, Calendar, ExternalLink, Zap, LogOut } from "lucide-react";
 
 const MainPage = () => {
   const navigate = useNavigate();
@@ -319,7 +319,6 @@ useEffect(() => {
   const leftNavItems = [
     { icon: <Home size={20} />, label: "Home", action: () => navigate("/") },
     { icon: <BarChart3 size={20} />, label: "Dashboard", action: () => navigate("/dashboard") },
-    { icon: <FileText size={20} />, label: "Reports", action: () => navigate("/reports") },
     { icon: <Bot size={20} />, label: "AI Insights", action: () => navigate("/ai-insights") },
     { icon: <CreditCard size={20} />, label: "Expenses", action: () => navigate("/expense") },
     { icon: <DollarSign size={20} />, label: "Income", action: () => navigate("/income") },
@@ -330,7 +329,9 @@ useEffect(() => {
     { icon: <TrendingUp size={20} />, label: "Investments", action: () => navigate("/investment") },
     { icon: <Calendar size={20} />, label: "Budget Calendar", action: () => navigate("/budget") },
     { icon: <Settings size={20} />, label: "Settings", action: () => navigate("/profile") },
-  ];
+    { icon: <Clipboard size={20} />, label: "Audit", action: () => navigate("/audit") } // New Audit item
+];
+
 
   return (
     <div className={`min-h-screen ${isDarkMode ? "bg-gray-950 text-white" : "bg-gray-50 text-gray-900"}`}>

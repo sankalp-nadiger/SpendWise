@@ -16,7 +16,7 @@ const IncomePage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
   const [isRecurringListOpen, setIsRecurringListOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
@@ -25,7 +25,6 @@ const IncomePage = () => {
   const [incomeCount, setIncomeCount] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Form states
   const [newIncome, setNewIncome] = useState({
     title: "",
     amount: "",
@@ -64,7 +63,15 @@ const IncomePage = () => {
   useEffect(() => {
     calculateTotals();
   }, [incomes]);
-
+  useEffect(() => {
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(theme);
+      localStorage.setItem('theme', theme);
+    }, [theme]);
+    const toggleTheme = () => {
+      setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+    };
+    
   const fetchIncomes = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/income', {
@@ -246,7 +253,7 @@ const IncomePage = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>
+    <div className={`min-h-screen ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -261,8 +268,8 @@ const IncomePage = () => {
           </div>
           <div className="flex items-center space-x-4">
           <div className="flex items-center mb-4">
-  <span className={`text-sm font-medium ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
-    {userType === "individual" ? "individual Mode" : "Organization Mode"}
+  <span className={`text-sm font-medium ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+    {userType === "individual" ? "Personal Mode" : "Organization Mode"}
   </span>
 </div>
             <button
@@ -284,19 +291,19 @@ const IncomePage = () => {
               View Recurring
             </button>
             <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700" : "bg-gray-200"}`}
-            >
-              {isDarkMode ? "☀️" : "🌙"}
-            </button>
+    onClick={toggleTheme}
+    className={`p-2 rounded-full ${theme === "dark" ? "bg-gray-700" : "bg-gray-200"}`}
+  >
+    {theme === "dark" ? "☀️" : "🌙"}
+  </button>
           </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className={`rounded-lg p-6 ${isDarkMode ? "bg-gray-800" : "bg-white shadow"}`}>
+          <div className={`rounded-lg p-6 ${theme=== "dark" ? "bg-gray-800" : "bg-white shadow"}`}>
             <div className="flex items-center">
-              <div className={`p-3 rounded-full ${isDarkMode ? "bg-blue-900" : "bg-blue-100"} mr-4`}>
+              <div className={`p-3 rounded-full ${theme=== "dark" ? "bg-blue-900" : "bg-blue-100"} mr-4`}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -308,9 +315,9 @@ const IncomePage = () => {
             </div>
           </div>
 
-          <div className={`rounded-lg p-6 ${isDarkMode ? "bg-gray-800" : "bg-white shadow"}`}>
+          <div className={`rounded-lg p-6 ${theme=== "dark" ? "bg-gray-800" : "bg-white shadow"}`}>
             <div className="flex items-center">
-              <div className={`p-3 rounded-full ${isDarkMode ? "bg-green-900" : "bg-green-100"} mr-4`}>
+              <div className={`p-3 rounded-full ${theme=== "dark" ? "bg-green-900" : "bg-green-100"} mr-4`}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
@@ -322,9 +329,9 @@ const IncomePage = () => {
             </div>
           </div>
 
-          <div className={`rounded-lg p-6 ${isDarkMode ? "bg-gray-800" : "bg-white shadow"}`}>
+          <div className={`rounded-lg p-6 ${theme=== "dark" ? "bg-gray-800" : "bg-white shadow"}`}>
             <div className="flex items-center">
-              <div className={`p-3 rounded-full ${isDarkMode ? "bg-purple-900" : "bg-purple-100"} mr-4`}>
+              <div className={`p-3 rounded-full ${theme=== "dark" ? "bg-purple-900" : "bg-purple-100"} mr-4`}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
@@ -338,7 +345,7 @@ const IncomePage = () => {
         </div>
 
         {/* Filters */}
-        <div className={`rounded-lg p-6 mb-8 ${isDarkMode ? "bg-gray-800" : "bg-white shadow"}`}>
+        <div className={`rounded-lg p-6 mb-8 ${theme=== "dark" ? "bg-gray-800" : "bg-white shadow"}`}>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="col-span-2">
               <label className="text-sm font-medium mb-1 block">Search</label>
@@ -351,7 +358,7 @@ const IncomePage = () => {
                 <Input
                   type="text"
                   placeholder="Search incomes..."
-                  className={`pl-10 ${isDarkMode ? "bg-gray-700 border-gray-600 text-white" : ""}`}
+                  className={`pl-10 ${theme=== "dark" ? "bg-gray-700 border-gray-600 text-white" : ""}`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -361,10 +368,10 @@ const IncomePage = () => {
             <div>
               <label className="text-sm font-medium mb-1 block">Category</label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className={isDarkMode ? "bg-gray-700 border-gray-600 text-white" : ""}>
+                <SelectTrigger className={theme=== "dark" ? "bg-gray-700 border-gray-600 text-white" : ""}>
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
-                <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+                <SelectContent className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}>
                   <SelectItem value="All Categories">All Categories</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
@@ -377,7 +384,7 @@ const IncomePage = () => {
               <label className="text-sm font-medium mb-1 block">From</label>
               <Input
                 type="date"
-                className={isDarkMode ? "bg-gray-700 border-gray-600 text-white" : ""}
+                className={theme === "dark" ? "bg-gray-700 border-gray-600 text-white" : ""}
                 value={dateRange.from}
                 onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })}
               />
@@ -388,13 +395,13 @@ const IncomePage = () => {
               <div className="flex items-center space-x-2">
                 <Input
                   type="date"
-                  className={isDarkMode ? "bg-gray-700 border-gray-600 text-white" : ""}
+                  className={theme=== "dark" ? "bg-gray-700 border-gray-600 text-white" : ""}
                   value={dateRange.to}
                   onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })}
                 />
                 <Button
                   onClick={exportData}
-                  className={`${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
+                  className={`${theme=== "dark" ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -406,9 +413,9 @@ const IncomePage = () => {
         </div>
 
         {/* Income Table */}
-        <div className={`rounded-lg overflow-hidden ${isDarkMode ? "bg-gray-800" : "bg-white shadow"}`}>
+        <div className={`rounded-lg overflow-hidden ${theme=== 'dark' ? "bg-gray-800" : "bg-white shadow"}`}>
           <table className="min-w-full divide-y divide-gray-700">
-            <thead className={isDarkMode ? "bg-gray-900" : "bg-gray-100"}>
+            <thead className={theme=== "dark" ? "bg-gray-900" : "bg-gray-100"}>
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Category</th>
@@ -424,14 +431,14 @@ const IncomePage = () => {
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className={`divide-y ${isDarkMode ? "divide-gray-700" : "divide-gray-200"}`}>
+            <tbody className={`divide-y ${theme=== "dark" ? "divide-gray-700" : "divide-gray-200"}`}>
               {filteredIncomes.length > 0 ? (
                 filteredIncomes.map((income) => (
                   <tr key={income._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDateDDMMYYYY(new Date(income.date).toLocaleDateString())}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className="px-2 py-1 rounded text-xs font-semibold" style={{ 
-                        backgroundColor: getCategoryColor(income.category, isDarkMode),
+                        backgroundColor: getCategoryColor(income.category, theme),
                         color: 'white' 
                       }}>
                         {income.category}
@@ -483,7 +490,7 @@ const IncomePage = () => {
       </div>
               {/* Add Income Modal */}
               <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-  <DialogContent className={`p-6 max-h-[90vh] overflow-y-auto ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
+  <DialogContent className={`p-6 max-h-[90vh] overflow-y-auto ${theme=== "dark" ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
     <DialogHeader>
       <DialogTitle className="text-xl font-semibold">"Add Income"</DialogTitle>
     </DialogHeader>
@@ -494,7 +501,7 @@ const IncomePage = () => {
         <Input
           type="text"
           placeholder={userType === "individual" ? "Salary, Freelance work, etc." : "Product sales, Service fees, etc."}
-          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
           value={newIncome.title}
           onChange={(e) => setNewIncome({ ...newIncome, title: e.target.value })}
         />
@@ -506,7 +513,7 @@ const IncomePage = () => {
           <Input
             type="number"
             placeholder="0.00"
-            className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+            className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
             value={newIncome.amount}
             onChange={(e) => setNewIncome({ ...newIncome, amount: e.target.value })}
           />
@@ -518,7 +525,7 @@ const IncomePage = () => {
             <Input
               type="number"
               placeholder="Quantity"
-              className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+              className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
               value={newIncome.units}
               onChange={(e) => setNewIncome({ ...newIncome, units: e.target.value })}
             />
@@ -528,7 +535,7 @@ const IncomePage = () => {
             <Input
               type="number"
               placeholder="0.00"
-              className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+              className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
               value={newIncome.pricePerUnit}
               onChange={(e) => setNewIncome({ ...newIncome, pricePerUnit: e.target.value })}
             />
@@ -539,7 +546,7 @@ const IncomePage = () => {
               <Input
                 type="text"
                 readOnly
-                className={`${isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""} cursor-not-allowed`}
+                className={`${theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""} cursor-not-allowed`}
                 value={(parseFloat(newIncome.units) * parseFloat(newIncome.pricePerUnit)).toFixed(2)}
               />
             </div>
@@ -553,10 +560,10 @@ const IncomePage = () => {
           value={newIncome.category}
           onValueChange={(value) => setNewIncome({ ...newIncome, category: value })}
         >
-          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+          <SelectTrigger className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}>
             <SelectValue placeholder="Select Category" />
           </SelectTrigger>
-          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+          <SelectContent className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}>
             {categories.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
@@ -570,7 +577,7 @@ const IncomePage = () => {
         <label className="text-sm font-medium mb-1 block">Date</label>
         <Input
           type="date"
-          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
           value={newIncome.date}
           onChange={(e) => setNewIncome({ ...newIncome, date: e.target.value })}
         />
@@ -582,10 +589,10 @@ const IncomePage = () => {
           value={newIncome.source}
           onValueChange={(value) => setNewIncome({ ...newIncome, source: value })}
         >
-          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+          <SelectTrigger className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}>
             <SelectValue placeholder="Select Source" />
           </SelectTrigger>
-          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+          <SelectContent className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}>
             {sources.map((source) => (
               <SelectItem key={source} value={source}>
                 {source}
@@ -600,7 +607,7 @@ const IncomePage = () => {
         <Input
           type="text"
           placeholder="Additional information"
-          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
           value={newIncome.notes}
           onChange={(e) => setNewIncome({ ...newIncome, notes: e.target.value })}
         />
@@ -609,7 +616,7 @@ const IncomePage = () => {
 
     <div className="flex justify-end space-x-4 mt-4">
       <DialogClose asChild>
-        <Button variant="outline" className={isDarkMode ? "bg-gray-600 hover:bg-red-700 text-white" : ""}>
+        <Button variant="outline" className={theme === "dark" ? "bg-gray-600 hover:bg-red-700 text-white" : ""}>
           Cancel
         </Button>
       </DialogClose>
@@ -626,7 +633,7 @@ const IncomePage = () => {
 
 {/* Add Recurring Income Modal */}
 <Dialog open={isRecurringModalOpen} onOpenChange={setIsRecurringModalOpen}>
-  <DialogContent className={`p-6 max-h-[90vh] overflow-y-auto ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
+  <DialogContent className={`p-6 max-h-[90vh] overflow-y-auto ${theme=== "dark" ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
     <DialogHeader>
       <DialogTitle className="text-xl font-semibold">Add Recurring Income</DialogTitle>
     </DialogHeader>
@@ -637,7 +644,7 @@ const IncomePage = () => {
         <Input
           type="text"
           placeholder={userType === "individual" ? "Salary, Rent Income, etc." : "Subscription Fees, Retainer Payments, etc."}
-          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
           value={recurringIncome.title}
           onChange={(e) => setRecurringIncome({ ...recurringIncome, title: e.target.value })}
         />
@@ -649,7 +656,7 @@ const IncomePage = () => {
           <Input
             type="number"
             placeholder="0.00"
-            className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+            className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
             value={recurringIncome.amount}
             onChange={(e) => setRecurringIncome({ ...recurringIncome, amount: e.target.value })}
           />
@@ -661,7 +668,7 @@ const IncomePage = () => {
             <Input
               type="number"
               placeholder="Quantity"
-              className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+              className={theme === "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
               value={recurringIncome.units}
               onChange={(e) => setRecurringIncome({ ...recurringIncome, units: e.target.value })}
             />
@@ -671,7 +678,7 @@ const IncomePage = () => {
             <Input
               type="number"
               placeholder="0.00"
-              className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+              className={theme === "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
               value={recurringIncome.pricePerUnit}
               onChange={(e) => setRecurringIncome({ ...recurringIncome, pricePerUnit: e.target.value })}
             />
@@ -682,7 +689,7 @@ const IncomePage = () => {
               <Input
                 type="text"
                 readOnly
-                className={`${isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""} cursor-not-allowed`}
+                className={`${theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""} cursor-not-allowed`}
                 value={(parseFloat(recurringIncome.units) * parseFloat(recurringIncome.pricePerUnit)).toFixed(2)}
               />
             </div>
@@ -696,10 +703,10 @@ const IncomePage = () => {
           value={recurringIncome.category}
           onValueChange={(value) => setRecurringIncome({ ...recurringIncome, category: value })}
         >
-          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+          <SelectTrigger className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}>
             <SelectValue placeholder="Select Category" />
           </SelectTrigger>
-          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+          <SelectContent className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}>
             {recurringCategories.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
@@ -715,10 +722,10 @@ const IncomePage = () => {
           value={recurringIncome.frequency}
           onValueChange={(value) => setRecurringIncome({ ...recurringIncome, frequency: value })}
         >
-          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+          <SelectTrigger className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}>
             <SelectValue placeholder="Select Frequency" />
           </SelectTrigger>
-          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+          <SelectContent className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}>
             {frequencies.map((freq) => (
               <SelectItem key={freq} value={freq}>
                 {freq.charAt(0).toUpperCase() + freq.slice(1)}
@@ -733,7 +740,7 @@ const IncomePage = () => {
           <label className="text-sm font-medium mb-1 block">Start Date</label>
           <Input
             type="date"
-            className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+            className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
             value={recurringIncome.startDate}
             onChange={(e) => setRecurringIncome({ ...recurringIncome, startDate: e.target.value })}
           />
@@ -743,7 +750,7 @@ const IncomePage = () => {
           <label className="text-sm font-medium mb-1 block">End Date (Optional)</label>
           <Input
             type="date"
-            className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+            className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
             value={recurringIncome.endDate}
             onChange={(e) => setRecurringIncome({ ...recurringIncome, endDate: e.target.value })}
           />
@@ -756,10 +763,10 @@ const IncomePage = () => {
           value={recurringIncome.source}
           onValueChange={(value) => setRecurringIncome({ ...recurringIncome, source: value })}
         >
-          <SelectTrigger className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+          <SelectTrigger className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}>
             <SelectValue placeholder="Select Source" />
           </SelectTrigger>
-          <SelectContent className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}>
+          <SelectContent className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}>
             {sources.map((source) => (
               <SelectItem key={source} value={source}>
                 {source}
@@ -774,7 +781,7 @@ const IncomePage = () => {
         <Input
           type="text"
           placeholder="Contract ID, reference, etc."
-          className={isDarkMode ? "bg-gray-800 border-gray-700 text-white" : ""}
+          className={theme=== "dark" ? "bg-gray-800 border-gray-700 text-white" : ""}
           value={recurringIncome.notes}
           onChange={(e) => setRecurringIncome({ ...recurringIncome, notes: e.target.value })}
         />
@@ -783,7 +790,7 @@ const IncomePage = () => {
 
     <div className="flex justify-end space-x-4 mt-4">
       <DialogClose asChild>
-        <Button variant="outline" className={isDarkMode ? "bg-gray-600 hover:bg-red-700 text-white" : ""}>
+        <Button variant="outline" className={theme=== "dark" ? "bg-gray-600 hover:bg-red-700 text-white" : ""}>
           Cancel
         </Button>
       </DialogClose>
@@ -800,7 +807,7 @@ const IncomePage = () => {
 
       {/* View Recurring Incomes Modal */}
       <Dialog open={isRecurringListOpen} onOpenChange={setIsRecurringListOpen}>
-  <DialogContent className={`p-6 max-w-4xl ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
+  <DialogContent className={`p-6 max-w-4xl ${theme === "dark" ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
     <DialogHeader>
       <DialogTitle className="text-xl font-semibold">Recurring Incomes</DialogTitle>
     </DialogHeader>
@@ -809,7 +816,7 @@ const IncomePage = () => {
       {recurringIncomes.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-700">
-            <thead className={isDarkMode ? "bg-gray-800" : "bg-gray-100"}>
+            <thead className={theme=== "dark" ? "bg-gray-800" : "bg-gray-100"}>
               <tr>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Title</th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Category</th>
@@ -819,13 +826,13 @@ const IncomePage = () => {
                 <th scope="col" className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className={`divide-y ${isDarkMode ? "divide-gray-700" : "divide-gray-200"}`}>
+            <tbody className={`divide-y ${theme === "dark" ? "divide-gray-700" : "divide-gray-200"}`}>
               {recurringIncomes.map((income) => (
                 <tr key={income._id}>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">{income.title}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     <span className="px-2 py-1 rounded text-xs font-semibold" style={{ 
-                      backgroundColor: getCategoryColor(income.category, isDarkMode),
+                      backgroundColor: getCategoryColor(income.category, theme),
                       color: 'white' 
                     }}>
                       {income.category}
@@ -881,7 +888,7 @@ const IncomePage = () => {
 
     <div className="flex justify-end mt-4">
       <DialogClose asChild>
-        <Button className={isDarkMode ? "bg-gray-700 hover:bg-gray-600 text-white" : ""}>
+        <Button className={theme==="dark" ? "bg-gray-700 hover:bg-gray-600 text-white" : ""}>
           Close
         </Button>
       </DialogClose>
@@ -894,7 +901,7 @@ const IncomePage = () => {
   newIncome={newIncome}
   setNewIncome={setNewIncome}
   userType={userType}
-  isDarkMode={isDarkMode}
+  theme={theme}
   categories={categories}
   sources={sources}
   incomes={incomes}
@@ -908,7 +915,7 @@ const IncomePage = () => {
 };
 
 // Helper functions
-const getCategoryColor = (category, isDarkMode) => {
+const getCategoryColor = (category, theme) => {
   const colors = {
     "Salary": "#4299E1",
     "Freelance": "#9F7AEA",
@@ -921,7 +928,7 @@ const getCategoryColor = (category, isDarkMode) => {
     "Other": "#718096"
   };
 
-  return colors[category] || (isDarkMode ? "#4A5568" : "#CBD5E0");
+  return colors[category] || (theme ? "#4A5568" : "#CBD5E0");
 };
 
 const getNextOccurrenceDate = (startDate, frequency) => {

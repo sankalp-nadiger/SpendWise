@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 const app = express();
 import dotenv from "dotenv";
 import nodemailer from 'nodemailer';
+import bot from "./src/services/telegrambot.service.js";
 
 dotenv.config();
 // Middleware
@@ -30,6 +31,7 @@ import orgRouter from "./src/routes/org.route.js"
 import reportRouter from "./src/routes/report.route.js"
 import recExpenseRouter from "./src/routes/recurring-expense.route.js";
 import incomeRouter from "./src/routes/income.route.js";
+import auditRouter from "./src/routes/audit.route.js"
 
 app.use("/api/budget", budgetRoutes);
 app.use("/api/users", userRouter);
@@ -38,6 +40,7 @@ app.use("/api/recExpense", recExpenseRouter);
 app.use("/api/investment", investmentRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/org", orgRouter);
+app.use("/api/audit", auditRouter);
 app.use("/api/income", incomeRouter);
 app.use("/api/report", reportRouter);
 app.use(bodyParser.json());
@@ -133,6 +136,17 @@ SpendWise Team`,
   } catch (error) {
     console.error("Error sending invites:", error);
     res.status(500).json({ message: "Failed to send invites" });
+  }
+});
+
+app.post("/send-message", async (req, res) => {
+  const { chatId, message } = req.body;
+
+  try {
+      await bot.sendMessage(chatId, message);
+      res.status(200).json({ success: true, message: "Message sent!" });
+  } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
   }
 });
 
