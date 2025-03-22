@@ -15,13 +15,13 @@ Categorized spending analysis.
 
 AI-based alerts for budget limits.
 
-Monthly and yearly reports.
+Monthly and yearly reports. Generate audits.
 
 <h3>🏢 Organization/Company Finance Management</h3>
 
 Multi-user access with role-based permissions.
 
-Department-wise budget tracking.
+Department & Branch-wise budget tracking.
 
 Approval workflows for expense management.
 
@@ -35,7 +35,7 @@ Backend: Node.js, Express.js
 
 Database: MongoDB (Mongoose ORM)
 
-Authentication: JWT-based auth & Oauth
+Authentication: JWT-based auth & Face recognition
 
 Data Analysis: Python (Pandas, NumPy) / Node.js (D3.js, TensorFlow.js)
 
