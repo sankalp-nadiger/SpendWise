@@ -1,5 +1,5 @@
 # SpendWise (MERN Stack with Data Analysis & Power BI Integration)
-A easy-to-use expense tracker with interactive dashboards equipped with data analysis for individual user &amp; designed to provide company/organization finance management support.
+A easy-to-use expense tracker with face authentication & interactive dashboards equipped with data analysis for individual user &amp; designed to provide company/organization finance management support.
 
 <h2>📌 Overview</h2>
 
@@ -10,6 +10,8 @@ This is a MERN stack-based expense tracker that allows individuals and organizat
 <h3>🏠 Individual Expense Tracking</h3>
 
 Add, edit, and delete transactions.
+
+Powerful face authentication.
 
 Categorized spending analysis.
 
@@ -29,7 +31,7 @@ Power BI-powered real-time analytics.
 
 <h2>🛠️ Tech Stack</h2>
 
-Frontend: React.js (with Context API/Redux for state management)
+Frontend: React.js
 
 Backend: Node.js, Express.js
 
