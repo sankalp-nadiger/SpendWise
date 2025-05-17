@@ -23,7 +23,7 @@
     "clsx": "^2.1.1",
     "combined-stream": "^1.0.8",
     "d3": "^7.9.0",
-    "date-fns": "^4.1.0",
+    "date-fns": "^3.6.0",
     "delayed-stream": "^1.0.0",
     "esbuild": "^0.24.2",
     "face-api.js": "^0.22.2",
