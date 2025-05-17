@@ -84,7 +84,7 @@ function ProfilePage() {
     const fetchData = async () => {
       try {
         // Fetch user profile
-        const userResponse = await axios.get("http://localhost:8000/api/users/profile", {
+        const userResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users/profile`, {
           withCredentials: true,
         });
         setUser(userResponse.data.user);
@@ -97,7 +97,7 @@ function ProfilePage() {
         ) {
           try {
             // Convert object to array of [role, link] pairs
-            const linksResponse = await axios.get("http://localhost:8000/api/org/invite-links", {
+            const linksResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/org/invite-links`, {
               withCredentials: true,
             });
   
@@ -131,7 +131,7 @@ function ProfilePage() {
   const fetchRecurringExpenses = async () => {
     setLoadingExpenses(true);
     try {
-      const response = await axios.get("http://localhost:8000/api/recExpense/get", {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/recExpense/get`, {
         withCredentials: true,
       });
       setRecurringExpenses(response.data.data || []);
@@ -168,7 +168,7 @@ function ProfilePage() {
         return;
       }
   
-      await axios.post("http://localhost:8000/api/organizations/invite", {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/organizations/invite`, {
         emails: emailList.join(","),
         inviteLink: currentInviteLink,
       });
@@ -228,15 +228,15 @@ function ProfilePage() {
   const handleExpenseSubmit = async () => {
     try {
       if (expenseDialogMode === 'add') {
-        await axios.post("http://localhost:8000/api/recExpense/add", currentExpense, {
+        await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/recExpense/add`, currentExpense, {
           withCredentials: true
         });
       } else if (expenseDialogMode === 'edit') {
-        await axios.put(`http://localhost:8000/api/recExpense/update/${currentExpense._id}`, currentExpense, {
+        await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/recExpense/update/${currentExpense._id}`, currentExpense, {
           withCredentials: true
         });
       } else if (expenseDialogMode === 'delete') {
-        await axios.delete(`http://localhost:8000/api/recExpense/delete/${currentExpense._id}`, {
+        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/recExpense/delete/${currentExpense._id}`, {
           withCredentials: true
         });
       }

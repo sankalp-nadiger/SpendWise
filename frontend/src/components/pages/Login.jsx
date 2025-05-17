@@ -572,7 +572,7 @@ console.log(`🧐 Spoof Check -> Brightness: ${avgBrightness.toFixed(2)}, Varian
         livenessVerified: true
       };
 
-      const response = await axios.post("http://localhost:8000/api/users/login", loginData, {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/users/login`, loginData, {
         withCredentials: true,
       });
 
@@ -641,7 +641,7 @@ console.log(`🧐 Spoof Check -> Brightness: ${avgBrightness.toFixed(2)}, Varian
         loginData.password = password;
       }
 
-      const response = await axios.post("http://localhost:8000/api/users/login", loginData, {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/users/login`, loginData, {
         withCredentials: true,
       });
       console.log("Login response:", response.data);

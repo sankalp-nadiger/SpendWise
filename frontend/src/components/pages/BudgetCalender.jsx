@@ -74,13 +74,13 @@ function BudgetCalendarPage() {
       try {
         setLoading(true);
         // Fetch expenses
-        const expensesResponse = await axios.get("http://localhost:8000/api/expense", {
+        const expensesResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/expense`, {
           withCredentials: true,
         });
         setExpenses(expensesResponse.data);
         
         // Fetch user budget
-        const budgetResponse = await axios.get("http://localhost:8000/api/budget", {
+        const budgetResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/budget`, {
           withCredentials: true,
         });
         
@@ -102,7 +102,7 @@ function BudgetCalendarPage() {
     try {
       setIsSaving(true);
       await axios.post(
-        "http://localhost:8000/api/budget",
+        `${import.meta.env.VITE_BACKEND_URL}/api/budget`,
         { budget: monthlyBudget },
         { withCredentials: true }
       );

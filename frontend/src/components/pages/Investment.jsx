@@ -44,7 +44,7 @@ const InvestmentsPage = () => {
   // Fetch users for organization perspective
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/users', {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users`, {
         withCredentials: true
       });
       setUsers(response.data);
@@ -56,7 +56,7 @@ const InvestmentsPage = () => {
   const fetchInvestments = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:8000/api/investment', {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/investment`, {
         withCredentials: true // Important for sending cookies
       });
       setInvestments(response.data);
@@ -76,7 +76,7 @@ const InvestmentsPage = () => {
   const handleAddInvestment = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8000/api/investment', formData, {
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/investment`, formData, {
         withCredentials: true // Important for sending cookies
       });
       setIsAddModalOpen(false);
@@ -112,7 +112,7 @@ const InvestmentsPage = () => {
     }
     
     try {
-      await axios.put(`http://localhost:8000/api/investment/${currentInvestment.id}`, formData, {
+      await axios.put(`${import.meta.env.VITE_BACKEND_URL}/api/investment/${currentInvestment.id}`, formData, {
         withCredentials: true
       });
       setIsEditModalOpen(false);
@@ -138,7 +138,7 @@ const InvestmentsPage = () => {
     
     if (window.confirm('Are you sure you want to delete this investment?')) {
       try {
-        await axios.delete(`http://localhost:8000/api/investment/${id}`, {
+        await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/investment/${id}`, {
           withCredentials: true
         });
         fetchInvestments();

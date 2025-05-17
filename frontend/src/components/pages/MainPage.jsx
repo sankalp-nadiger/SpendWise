@@ -243,7 +243,7 @@ useEffect(() => {
     if (!recurringExpense.title || !recurringExpense.amount || !recurringExpense.category) return;
   
     try {
-      const response = await fetch("http://localhost:8000/api/recExpense/add", {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/recExpense/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -290,7 +290,7 @@ useEffect(() => {
     if (!expense.title || !expense.amount || !expense.category) return;
   
     try {
-      const response = await fetch("http://localhost:8000/api/expense/add", {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/expense/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -384,7 +384,7 @@ useEffect(() => {
   onClick={async () => {
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/users/logout",
+        `${import.meta.env.VITE_BACKEND_URL}/api/users/logout`,
         {},
         { withCredentials: true }
       );

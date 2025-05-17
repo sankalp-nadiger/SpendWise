@@ -88,7 +88,7 @@ const handleDownloadReport = async (fileType) => {
     };
     
     // Make API request to generate document
-const filenameResponse = await fetch(`http://localhost:8000/api/report/expense/filename/${fileType}`, {
+const filenameResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/report/expense/filename/${fileType}`, {
   method: "GET",
   headers: {
     "Content-Type": "application/json",
@@ -102,7 +102,7 @@ if (!filenameResponse.ok) {
 
 const { filename } = await filenameResponse.json();
 
-const response = await fetch(`http://localhost:8000/api/report/expense/export/${fileType}`, {
+const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/report/expense/export/${fileType}`, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -157,7 +157,7 @@ const handleEmailReport = async () => {
     };
     
     // Make API request to send email
-    const response = await fetch("http://localhost:8000/api/report/expense/email-report", {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/report/expense/email-report`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -211,7 +211,7 @@ const handleEmailReport = async () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const url = "http://localhost:8000/api/expense";
+        const url = `${import.meta.env.VITE_BACKEND_URL}/api/expense`;
           
         const response = await axios.get(url, {
           withCredentials: true, // ✅ Send cookies (accessToken)
@@ -326,7 +326,7 @@ const categories = userType === "organization"
         expenseData.teamId = newExpense.teamId;
       }
       
-      const response = await fetch("http://localhost:8000/api/expense/add", {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/expense/add`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -405,7 +405,7 @@ const categories = userType === "organization"
       }
   
       // Make API request with cookies
-      const response = await fetch(`http://localhost:8000/api/expense/${currentExpense._id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/expense/${currentExpense._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -448,7 +448,7 @@ const categories = userType === "organization"
       setLoading(true);
 
       // Make API request with cookies
-      const response = await fetch(`http://localhost:8000/api/expense/${currentExpense._id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/expense/${currentExpense._id}`, {
         method: "DELETE",
         credentials: "include",
       });

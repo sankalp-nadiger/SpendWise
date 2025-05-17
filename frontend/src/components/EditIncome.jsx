@@ -65,7 +65,7 @@ const EditIncomeModal = ({
       const isRecurringIncome = newIncome.isRecurring || isRecurring;
 
       // Make API request with cookies
-      const response = await fetch(`http://localhost:8000/api/income/${newIncome._id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/income/${newIncome._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

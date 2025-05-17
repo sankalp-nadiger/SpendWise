@@ -8,7 +8,7 @@ const ReportGenerator = () => {
   const handleGenerateReport = async () => {
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/reports/generate",
+        `${import.meta.env.VITE_BACKEND_URL}/api/reports/generate`,
         { userId: "USER_ID", startDate, endDate },
         { responseType: "blob" }
       );

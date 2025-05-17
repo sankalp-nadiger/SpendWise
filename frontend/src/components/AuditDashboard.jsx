@@ -91,7 +91,7 @@ const AuditDashboard = () => {
       // Test server connection first
             
       const response = await axios.post(
-        'http://localhost:8000/api/audit/generate', 
+        `${import.meta.env.VITE_BACKEND_URL}/api/audit/generate`, 
         { parameters, purpose, userType },
         { 
           withCredentials: true,

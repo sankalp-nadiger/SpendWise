@@ -18,7 +18,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/dashboard", {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard`, {
           withCredentials: true, // Sends cookies (accessToken) for authentication
         });
         setDashboardData(response.data);

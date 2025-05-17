@@ -90,7 +90,7 @@ const Signup = () => {
       setVerificationSent(false);
     try {
       try {
-        const response = await axios.get(`http://localhost:8000/api/org/exists/${formData.organizationName}`);
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/org/exists/${formData.organizationName}`);
         const exists = response.data.exists;
         console.log(response.data)
         setOrganizationExists(exists);
@@ -165,7 +165,7 @@ const sendVerificationCode = async () => {
   
   try {
     // Make the actual API call
-    const response = await axios.post("http://localhost:8000/api/organizations/verify", {
+    const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/organizations/verify`, {
       email: 'nadigersankalp@gmail.com',
       organizationName: formData.organizationName,
     });
@@ -198,7 +198,7 @@ const validateVerificationCode = async () => {
   
   try {
     // Make the API call to validate the code
-    const response = await axios.post("http://localhost:8000/api/organizations/validate-code", {
+    const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/organizations/validate-code`, {
       email: 'nadigersankalp@gmail.com',
       code: formData.verificationCode,
       organizationName: formData.organizationName,
@@ -321,7 +321,7 @@ const validateVerificationCode = async () => {
     
     try {
       // In a real app, you would include the organization info in the API call
-      const response = await axios.post("http://localhost:8000/api/users/register", {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/users/register`, {
         ...formData,
         faceDescriptor,
         // Include organization data if applicable

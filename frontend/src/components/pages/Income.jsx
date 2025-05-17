@@ -74,7 +74,7 @@ const IncomePage = () => {
     
   const fetchIncomes = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/income', {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/income`, {
         withCredentials: true
       });
       setIncomes(response.data);
@@ -86,7 +86,7 @@ const IncomePage = () => {
 
   const fetchRecurringIncomes = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/income?recurring=true', {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/income?recurring=true`, {
         withCredentials: true
       });
       setRecurringIncomes(response.data);
@@ -123,7 +123,7 @@ const IncomePage = () => {
         payload.amount = (parseFloat(newIncome.units) * parseFloat(newIncome.pricePerUnit)).toString();
       }
       
-      const response = await axios.post('http://localhost:8000/api/income', payload, {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/income`, payload, {
         withCredentials: true
       });
       
@@ -157,7 +157,7 @@ const IncomePage = () => {
         payload.amount = (parseFloat(recurringIncome.units) * parseFloat(recurringIncome.pricePerUnit)).toString();
       }
       
-      const response = await axios.post('http://localhost:8000/api/income', payload, {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/income`, payload, {
         withCredentials: true
       });
       
@@ -189,7 +189,7 @@ const IncomePage = () => {
     }
     
     try {
-      await axios.delete(`http://localhost:8000/api/income/${id}`, {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/income/${id}`, {
         withCredentials: true
       });
       
