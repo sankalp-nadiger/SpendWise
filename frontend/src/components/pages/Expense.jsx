@@ -326,7 +326,6 @@ const categories = userType === "organization"
         expenseData.teamId = newExpense.teamId;
       }
       
-      // Make API request
       const response = await fetch("http://localhost:8000/api/expense/add", {
         method: "POST",
         headers: {

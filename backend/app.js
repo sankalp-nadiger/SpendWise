@@ -26,7 +26,7 @@ import userRouter from './src/routes/user.route.js';
 import expenseRouter from './src/routes/expense.route.js';
 import budgetRoutes from "./src/routes/budget.route.js";
 import investmentRouter from "./src/routes/investment.route.js";
-import dashboardRouter from "./src/routes/dashboard.route.js";
+// import dashboardRouter from "./src/routes/dashboard.route.js";
 import orgRouter from "./src/routes/org.route.js"
 import reportRouter from "./src/routes/report.route.js"
 import recExpenseRouter from "./src/routes/recurring-expense.route.js";
@@ -38,7 +38,7 @@ app.use("/api/users", userRouter);
 app.use("/api/expense", expenseRouter);
 app.use("/api/recExpense", recExpenseRouter);
 app.use("/api/investment", investmentRouter);
-app.use("/api/dashboard", dashboardRouter);
+// app.use("/api/dashboard", dashboardRouter);
 app.use("/api/org", orgRouter);
 app.use("/api/audit", auditRouter);
 app.use("/api/income", incomeRouter);

@@ -1,9 +1,9 @@
-import express from "express";
-import { getDashboardData } from "../controllers/dashboard.controller.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+// import express from "express";
+// import { getDashboardData } from "../controllers/dashboard.controller.js";
+// import { verifyJWT } from "../middlewares/auth.middleware.js";
 
-const router = express.Router();
+// const router = express.Router();
 
-router.get("/", verifyJWT, getDashboardData);
+// router.get("/", verifyJWT, getDashboardData);
 
-export default router;
+// export default router;

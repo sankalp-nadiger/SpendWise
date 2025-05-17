@@ -13,6 +13,7 @@ import ProfilePage from "./components/pages/Profile"
 import Dashboard from "./components/pages/Dashboard"
 import IncomePage from "./components/pages/Income"
 import AuditDashboard from "./components/AuditDashboard"
+
 function App() {
     return (
         <Router>
