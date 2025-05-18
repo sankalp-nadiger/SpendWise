@@ -1,4 +1,4 @@
-# SpendWise (MERN Stack with Data Analysis & Power BI Integration)
+# SpendWise
 A easy-to-use expense tracker with face authentication & interactive dashboards equipped with data analysis for individual user &amp; designed to provide company/organization finance management support.
 
 <h2>📌 Overview</h2>
