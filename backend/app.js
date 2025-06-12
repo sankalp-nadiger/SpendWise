@@ -19,9 +19,6 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
 
-const PORT = 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
 import userRouter from './src/routes/user.route.js';
 import expenseRouter from './src/routes/expense.route.js';
 import budgetRoutes from "./src/routes/budget.route.js";
