@@ -10,7 +10,7 @@ import bot from "./src/services/telegrambot.service.js";
 dotenv.config();
 // Middleware
 app.use(cors({
-    origin: *,
+    origin: ['http://localhost:5173', 'https://spendwiseweb.netlify.app/'],
     credentials: true,
     methods: ['GET', 'PUT', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
 }));
