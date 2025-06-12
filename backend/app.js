@@ -10,7 +10,7 @@ import bot from "./src/services/telegrambot.service.js";
 dotenv.config();
 // Middleware
 app.use(cors({
-    origin: '*',
+    origin: *,
     credentials: true,
     methods: ['GET', 'PUT', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
 }));
