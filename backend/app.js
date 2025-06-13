@@ -10,9 +10,14 @@ import bot from "./src/services/telegrambot.service.js";
 dotenv.config();
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://spendwiseweb.netlify.app/'],
+    origin: [
+        'http://localhost:5173', 
+        'https://spendwiseweb.netlify.app' 
+    ],
     credentials: true,
     methods: ['GET', 'PUT', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    optionsSuccessStatus: 200 // For legacy browser support
 }));
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
