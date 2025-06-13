@@ -117,7 +117,7 @@ const IncomePage = () => {
   const handleAddIncome = async () => {
     try {
       // For organization type, calculate amount based on units and price per unit
-      const payload = { ...newIncome };
+      const payload = { ...newIncome, recurring: newIncome.isRecurring };
       
       if (userType === "organization" && newIncome.units && newIncome.pricePerUnit) {
         payload.amount = (parseFloat(newIncome.units) * parseFloat(newIncome.pricePerUnit)).toString();
@@ -141,6 +141,7 @@ const IncomePage = () => {
       });
       
       setIsAddModalOpen(false);
+      fetchIncomes();
       toast.success("Income added successfully!");
     } catch (error) {
       console.error("Error adding income:", error);
@@ -150,7 +151,7 @@ const IncomePage = () => {
 
   const handleAddRecurringIncome = async () => {
     try {
-      const payload = { ...recurringIncome, isRecurring: true };
+      const payload = { ...recurringIncome, recurring: true };
       
       // For organization type, calculate amount from units and price per unit
       if (userType === "organization" && recurringIncome.units && recurringIncome.pricePerUnit) {
@@ -176,6 +177,7 @@ const IncomePage = () => {
       });
       
       setIsRecurringModalOpen(false);
+      fetchRecurringIncomes();
       toast.success("Recurring income added successfully!");
     } catch (error) {
       console.error("Error adding recurring income:", error);

@@ -9,7 +9,13 @@ const IncomeSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
   date: { type: Date, default: Date.now },
-  recurring: Boolean,
+units: Number,
+pricePerUnit: Number,
+notes: String,
+frequency: String,
+startDate: Date,
+endDate: Date,
+recurring: Boolean,
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 });
 

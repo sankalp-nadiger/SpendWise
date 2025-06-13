@@ -4,18 +4,24 @@ import OrganizationUser from "../models/orgUser.model.js";
 // CREATE new income record
 export const addIncome = async (req, res) => {
   try {
-    const { amount, source, description, date, recurring, category, title } = req.body;
+    const { amount, source, description, date, recurring, category, title, units, pricePerUnit, notes, frequency, startDate, endDate } = req.body;
     const userId = req.user._id;
     let incomeData = {
-      amount,
-      source,
-      description,
-      date,
-      recurring,
-      category,
-      title,
-      createdBy: userId,
-    };
+  amount,
+  source,
+  description: description || title, // Use title as description if description not provided
+  date,
+  recurring,
+  category,
+  title,
+  units,
+  pricePerUnit,
+  notes,
+  frequency,
+  startDate,
+  endDate,
+  createdBy: userId,
+};
 
     // If the user is an organization user, get the organization id from OrganizationUser
     if (req.user.usageType === "organization") {
@@ -51,7 +57,15 @@ export const getIncomes = async (req, res) => {
     } else {
       query.user = userId;
     }
-
+    // After building the base query, add:
+if (req.query.recurring === 'true') {
+  query.recurring = true;
+} else if (req.query.recurring === 'false') {
+  query.recurring = { $ne: true }; // Get non-recurring or undefined
+} else {
+  // If no recurring parameter, get non-recurring for main list
+  query.recurring = { $ne: true };
+}
     const incomes = await Income.find(query);
     res.json(incomes);
   } catch (error) {

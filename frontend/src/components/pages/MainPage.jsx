@@ -826,7 +826,6 @@ useEffect(() => {
 </Dialog>
 
 {/* Add Another Expense Confirmation - Show this after successful addition */}
-{/* Add Another Expense Confirmation */}
 {showAddAnotherPrompt && (
   <Dialog open={showAddAnotherPrompt} onOpenChange={setShowAddAnotherPrompt}>
     <DialogContent className={`p-6 ${isDarkMode ? "bg-gray-900 text-white border-gray-800" : "bg-white text-black"}`}>
@@ -916,7 +915,7 @@ useEffect(() => {
 
           <div className="flex justify-end space-x-4 mt-4">
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" className="bg-black-600 hover:bg-red-700">Cancel</Button>
             </DialogClose>
             <Button
               onClick={handleAddExpense}
