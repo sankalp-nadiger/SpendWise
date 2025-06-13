@@ -222,14 +222,13 @@ const loginUser = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Username or email is required");
   }
 
-  // Find the user
   const user = await User.findOne({ $or: [{ username }, { email }] });
 
   if (!user) {
       throw new ApiError(404, "User does not exist");
   }
 
-  // If faceDescriptor is provided, use face-based authentication
+  // Your existing authentication logic...
   if (faceDescriptor && faceDescriptor.length > 0) {
       if (!user.faceDescriptor || user.faceDescriptor.length === 0) {
           throw new ApiError(401, "Face authentication not set up for this user");
@@ -242,7 +241,6 @@ const loginUser = asyncHandler(async (req, res) => {
       
       console.log("Face authentication successful for user:", user.username);
   } else {
-      // Otherwise, use password authentication
       if (!password) {
           throw new ApiError(400, "Password or face authentication is required");
       }
@@ -254,17 +252,15 @@ const loginUser = asyncHandler(async (req, res) => {
       console.log("Password authentication successful for user:", user.username);
   }
 
-  // Generate tokens
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
-
-  // Get user data without sensitive information
-  // Fixed the userType reference issue - using usageType from the request
   const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
+  // Updated cookie options for cross-origin
   const options = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Only in production
-      sameSite: "lax"
+      secure: true, // Always true for production
+      sameSite: "none", // Required for cross-origin
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
   };
 
   return res
